@@ -29,6 +29,8 @@ export default function Home() {
     return saved ? JSON.parse(saved) : null;
   });
 
+  const [isGenerating, setIsGenerating] = useState(false);
+
   // Autosave effect
   useEffect(() => {
     localStorage.setItem("clinical-inputs", JSON.stringify(inputs));
@@ -40,20 +42,23 @@ export default function Home() {
     }
   }, [generatedPlan]);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    setIsGenerating(true);
     try {
-      const plan = generateTreatmentPlan(inputs);
+      const plan = await generateTreatmentPlan(inputs);
       setGeneratedPlan(plan);
       toast({
         title: "Plan Generated",
         description: "Clinical documentation has been compiled.",
       });
-    } catch (e) {
+    } catch (e: any) {
       toast({
         title: "Generation Failed",
-        description: "There was an error processing the inputs.",
+        description: e.message || "There was an error processing the inputs.",
         variant: "destructive"
       });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -73,7 +78,8 @@ export default function Home() {
             <EditorPanel 
               inputs={inputs} 
               setInputs={setInputs} 
-              onGenerate={handleGenerate} 
+              onGenerate={handleGenerate}
+              isGenerating={isGenerating}
             />
           </ResizablePanel>
           

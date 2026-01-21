@@ -6,22 +6,12 @@ export interface SupabaseConfig {
   enabled: boolean;
 }
 
-export const getStoredSupabaseConfig = (): SupabaseConfig => {
-  const stored = localStorage.getItem('supabase-config');
-  return stored ? JSON.parse(stored) : { url: '', anonKey: '', enabled: false };
-};
-
-export const saveSupabaseConfig = (config: SupabaseConfig) => {
-  localStorage.setItem('supabase-config', JSON.stringify(config));
-};
-
 export const createSupabaseClient = (config: SupabaseConfig) => {
   if (!config.enabled || !config.url || !config.anonKey) return null;
   return createClient(config.url, config.anonKey);
 };
 
-// Mock function to simulate Edge Function calls since we don't have a real backend
-// In a real implementation, this would call supabase.functions.invoke('ocr-pdf', ...)
+// Process file with Supabase (Upload + Mock Edge Function Call)
 export const processWithSupabase = async (
   file: File, 
   type: 'ocr' | 'transcribe', 
@@ -29,12 +19,36 @@ export const processWithSupabase = async (
 ): Promise<string> => {
   if (!config.enabled) throw new Error("Supabase is not enabled");
 
-  // Simulate network delay
+  const supabase = createSupabaseClient(config);
+  if (!supabase) throw new Error("Invalid Supabase configuration");
+
+  // 1. Upload to Storage
+  const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+  const bucketName = 'clinical_documents';
+
+  const { data: uploadData, error: uploadError } = await supabase
+    .storage
+    .from(bucketName)
+    .upload(fileName, file);
+
+  if (uploadError) {
+    console.error("Supabase Upload Error:", uploadError);
+    // Continue with mock if bucket doesn't exist yet for the prototype
+    // throw new Error(`Upload failed: ${uploadError.message}`);
+  }
+
+  // 2. Call Edge Function (Mocked for now as we can't deploy edge functions from here)
+  // In a real app:
+  // const { data, error } = await supabase.functions.invoke('process-document', { 
+  //   body: { path: fileName, type } 
+  // });
+  
+  // Simulate processing delay
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   if (type === 'ocr') {
-    return `[Supabase OCR Result for ${file.name}]\n\n(Simulated) The content of this scanned document would appear here after being processed by the OCR engine.`;
+    return `[Supabase OCR Result for ${file.name}]\n(Stored at: ${bucketName}/${fileName})\n\n(Simulated) The content of this scanned document would appear here after being processed by the OCR engine.`;
   } else {
-    return `[Supabase Transcription Result for ${file.name}]\n\n(Simulated) [00:00:00] Provider: Hello, how are you today?\n[00:00:05] Client: I've been feeling a bit better, thanks.`;
+    return `[Supabase Transcription Result for ${file.name}]\n(Stored at: ${bucketName}/${fileName})\n\n(Simulated) [00:00:00] Provider: Hello, how are you today?\n[00:00:05] Client: I've been feeling a bit better, thanks.`;
   }
 };

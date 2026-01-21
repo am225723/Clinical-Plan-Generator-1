@@ -32,16 +32,30 @@ export const getStoredSettings = (): AppSettings => {
   // Backwards compatibility check
   const oldSupabase = localStorage.getItem('supabase-config');
   
-  if (stored) return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
-  
-  if (oldSupabase) {
-    return {
+  // Try to load env var if present (User requested EXPO_OPENAI_API_KEY support)
+  // In Vite we use import.meta.env.VITE_*
+  // We'll check for a VITE_OPENAI_API_KEY that might have been mapped from the user's setup
+  const envApiKey = import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.VITE_EXPO_OPENAI_API_KEY || '';
+
+  let settings = DEFAULT_SETTINGS;
+
+  if (stored) {
+    settings = { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+  } else if (oldSupabase) {
+    settings = {
       ...DEFAULT_SETTINGS,
       supabase: JSON.parse(oldSupabase)
     };
   }
-  
-  return DEFAULT_SETTINGS;
+
+  // Pre-populate API key if available and not already set
+  if (envApiKey && !settings.ai.apiKey) {
+    settings.ai.apiKey = envApiKey;
+    settings.ai.provider = 'openai';
+    settings.ai.enabled = true;
+  }
+
+  return settings;
 };
 
 export const saveSettings = (settings: AppSettings) => {

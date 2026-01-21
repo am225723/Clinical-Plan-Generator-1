@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Stethoscope, ClipboardList, User, Settings, Sparkles, Database } from "lucide-react";
+import { FileText, Stethoscope, ClipboardList, User, Settings, Sparkles, Database, Loader2 } from "lucide-react";
 import { ClinicalInputs, DEMO_DATA } from "@/lib/clinical-generator";
 import { FileUploadArea } from "@/components/clinical/file-upload-area";
 import { useToast } from "@/hooks/use-toast";
@@ -15,10 +15,11 @@ import { useToast } from "@/hooks/use-toast";
 interface EditorPanelProps {
   inputs: ClinicalInputs;
   setInputs: (inputs: ClinicalInputs) => void;
-  onGenerate: () => void;
+  onGenerate: () => Promise<void>;
+  isGenerating?: boolean;
 }
 
-export function EditorPanel({ inputs, setInputs, onGenerate }: EditorPanelProps) {
+export function EditorPanel({ inputs, setInputs, onGenerate, isGenerating = false }: EditorPanelProps) {
   const { toast } = useToast();
 
   const handleChange = (field: keyof ClinicalInputs, value: string | boolean) => {
@@ -188,8 +189,20 @@ export function EditorPanel({ inputs, setInputs, onGenerate }: EditorPanelProps)
       </ScrollArea>
 
       <div className="p-4 border-t bg-white">
-        <Button onClick={onGenerate} className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md">
-          <Sparkles className="w-4 h-4 mr-2" /> Generate Treatment Plan
+        <Button 
+          onClick={() => onGenerate()} 
+          disabled={isGenerating}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating Plan...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 mr-2" /> Generate Treatment Plan
+            </>
+          )}
         </Button>
       </div>
     </div>
