@@ -188,93 +188,98 @@ export const generateTreatmentPlanLocal = (inputs: ClinicalInputs): GeneratedPla
   };
 };
 
-// Async Generator using OpenAI
-export const generateTreatmentPlanAI = async (inputs: ClinicalInputs, apiKey: string): Promise<GeneratedPlan> => {
-  const prompt = `
-    Role: Expert Clinical Psychiatrist.
-    Task: Generate a structured mental health treatment plan JSON from the following raw inputs.
-    
-    INPUTS:
-    - Intake: ${inputs.intake_form_data}
-    - Session Transcript: ${inputs.session_transcripts}
-    - Scores: ${inputs.assessment_scores}
-    - Notes: ${inputs.provider_notes}
-
-    REQUIREMENTS:
-    - Strictly follow the JSON structure provided below.
-    - Use professional clinical language.
-    - Infer missing data where reasonable based on context, or label as "Not documented".
-    - Diagnoses must include ICD-10 and DSM-5-TR codes.
-    - Treatment goals must be SMART.
-    
-    OUTPUT JSON FORMAT:
-    {
-      "chief_complaint": "string",
-      "hpi": "string (comprehensive narrative)",
-      "psych_ros": ["string", "string"],
-      "substance_use": ["string"],
-      "psych_medical_history": "string",
-      "current_meds": ["string"],
-      "mse": ["string (Appearance: ...)", "string (Behavior: ...)"],
-      "risk_assessment": { "level": "string", "justification": "string" },
-      "diagnosis": [{ "code": "string", "name": "string", "type": "ICD-10" | "DSM-5-TR" }],
-      "treatment_goals": [{ "goal": "string", "objectives": ["string"] }],
-      "mdm": { "complexity": "string", "code": "string", "rationale": "string" },
-      "psychotherapy_addon": "string",
-      "prescription_plan": "string",
-      "informed_consent": "string",
-      "labs": "string",
-      "missing_data": ["string"]
-    }
-  `;
-
-  try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [{ role: "system", content: "You are a helpful assistant that outputs JSON." }, { role: "user", content: prompt }],
-        response_format: { type: "json_object" }
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`OpenAI API Error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices[0].message.content;
-    const parsed = JSON.parse(content) as GeneratedPlan;
-    
-    // Validate/Patch structure if needed (simple check)
-    if (!parsed.chief_complaint || !parsed.diagnosis) {
-      throw new Error("Invalid AI response structure");
-    }
-
-    return parsed;
-  } catch (error) {
-    console.error("AI Generation Failed:", error);
-    throw error;
-  }
-};
-
-// Main entry point that decides which generator to use
+// Main entry point - now calls backend API
 export const generateTreatmentPlan = async (inputs: ClinicalInputs): Promise<GeneratedPlan> => {
   const settings = getStoredSettings();
   
-  if (settings.ai.enabled && settings.ai.apiKey && settings.ai.provider === 'openai') {
-    return generateTreatmentPlanAI(inputs, settings.ai.apiKey);
+  // Check if AI is enabled in settings
+  if (settings.ai.enabled && settings.ai.apiKey) {
+    // User has their own API key configured - use client-side call
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${settings.ai.apiKey}`
+        },
+        body: JSON.stringify({
+          model: settings.ai.model || "gpt-4o",
+          messages: [
+            { role: "system", content: "You are a helpful assistant that outputs JSON." },
+            { role: "user", content: buildPrompt(inputs) }
+          ],
+          response_format: { type: "json_object" }
+        })
+      });
+
+      if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+      
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      return JSON.parse(content) as GeneratedPlan;
+    } catch (error) {
+      console.error("Client-side AI generation failed, falling back to backend:", error);
+    }
   }
-  
-  // Fallback to local deterministic generator
-  // Simulate a small delay for async consistency
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve(generateTreatmentPlanLocal(inputs));
-    }, 500);
-  });
+
+  // Use backend API (Replit AI Integrations)
+  try {
+    const response = await fetch("/api/generate-treatment-plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inputs })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Backend API error: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Backend AI generation failed, using local fallback:", error);
+    // Final fallback to deterministic local generator
+    return new Promise(resolve => {
+      setTimeout(() => resolve(generateTreatmentPlanLocal(inputs)), 500);
+    });
+  }
 };
+
+function buildPrompt(inputs: ClinicalInputs): string {
+  return `
+Role: Expert Clinical Psychiatrist.
+Task: Generate a structured mental health treatment plan JSON from the following raw inputs.
+
+INPUTS:
+- Intake: ${inputs.intake_form_data || "Not provided"}
+- Session Transcript: ${inputs.session_transcripts || "Not provided"}
+- Scores: ${inputs.assessment_scores || "Not provided"}
+- Notes: ${inputs.provider_notes || "Not provided"}
+
+REQUIREMENTS:
+- Strictly follow the JSON structure provided below.
+- Use professional clinical language.
+- Infer missing data where reasonable based on context, or label as "Not documented".
+- Diagnoses must include ICD-10 and DSM-5-TR codes.
+- Treatment goals must be SMART.
+
+OUTPUT JSON FORMAT:
+{
+  "chief_complaint": "string",
+  "hpi": "string (comprehensive narrative)",
+  "psych_ros": ["string", "string"],
+  "substance_use": ["string"],
+  "psych_medical_history": "string",
+  "current_meds": ["string"],
+  "mse": ["string (Appearance: ...)", "string (Behavior: ...)"],
+  "risk_assessment": { "level": "string", "justification": "string" },
+  "diagnosis": [{ "code": "string", "name": "string", "type": "ICD-10" | "DSM-5-TR" }],
+  "treatment_goals": [{ "goal": "string", "objectives": ["string"] }],
+  "mdm": { "complexity": "string", "code": "string", "rationale": "string" },
+  "psychotherapy_addon": "string",
+  "prescription_plan": "string",
+  "informed_consent": "string",
+  "labs": "string",
+  "missing_data": ["string"]
+}
+`;
+}

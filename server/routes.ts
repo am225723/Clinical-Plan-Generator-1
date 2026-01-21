@@ -1,16 +1,89 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+});
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  
+  // Generate treatment plan using AI
+  app.post("/api/generate-treatment-plan", async (req, res) => {
+    try {
+      const { inputs } = req.body;
+      
+      if (!inputs) {
+        return res.status(400).json({ error: "Clinical inputs are required" });
+      }
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+      const prompt = `
+Role: Expert Clinical Psychiatrist.
+Task: Generate a structured mental health treatment plan JSON from the following raw inputs.
+
+INPUTS:
+- Intake: ${inputs.intake_form_data || "Not provided"}
+- Session Transcript: ${inputs.session_transcripts || "Not provided"}
+- Scores: ${inputs.assessment_scores || "Not provided"}
+- Notes: ${inputs.provider_notes || "Not provided"}
+
+REQUIREMENTS:
+- Strictly follow the JSON structure provided below.
+- Use professional clinical language.
+- Infer missing data where reasonable based on context, or label as "Not documented".
+- Diagnoses must include ICD-10 and DSM-5-TR codes.
+- Treatment goals must be SMART.
+
+OUTPUT JSON FORMAT:
+{
+  "chief_complaint": "string",
+  "hpi": "string (comprehensive narrative)",
+  "psych_ros": ["string", "string"],
+  "substance_use": ["string"],
+  "psych_medical_history": "string",
+  "current_meds": ["string"],
+  "mse": ["string (Appearance: ...)", "string (Behavior: ...)"],
+  "risk_assessment": { "level": "string", "justification": "string" },
+  "diagnosis": [{ "code": "string", "name": "string", "type": "ICD-10" | "DSM-5-TR" }],
+  "treatment_goals": [{ "goal": "string", "objectives": ["string"] }],
+  "mdm": { "complexity": "string", "code": "string", "rationale": "string" },
+  "psychotherapy_addon": "string",
+  "prescription_plan": "string",
+  "informed_consent": "string",
+  "labs": "string",
+  "missing_data": ["string"]
+}
+`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are a helpful assistant that outputs JSON." },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error("No response from AI");
+      }
+
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+
+    } catch (error) {
+      console.error("Error generating treatment plan:", error);
+      res.status(500).json({ 
+        error: "Failed to generate treatment plan",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
 
   return httpServer;
 }
