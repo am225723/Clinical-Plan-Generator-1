@@ -3,13 +3,13 @@ import { useDropzone } from "react-dropzone";
 import { Upload, FileText, Mic, AlertTriangle, Trash2, CheckCircle2, Loader2, Settings2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { extractTextFromPdf } from "@/lib/pdf-utils";
-import { SupabaseConfigDialog } from "@/components/clinical/supabase-config-dialog";
+import { SettingsDialog } from "@/components/clinical/settings-dialog";
 import { ExtractionReviewDialog } from "@/components/clinical/extraction-review-dialog";
-import { getStoredSupabaseConfig, processWithSupabase, SupabaseConfig } from "@/lib/supabase-client";
+import { processWithSupabase } from "@/lib/supabase-client";
+import { getStoredSettings, saveSettings, AppSettings } from "@/lib/app-settings";
 import { useToast } from "@/hooks/use-toast";
 import { ClinicalInputs } from "@/lib/clinical-generator";
 
@@ -30,14 +30,13 @@ interface UploadedFile {
 export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
   const { toast } = useToast();
   const [files, setFiles] = useState<UploadedFile[]>([]);
-  const [supabaseConfig, setSupabaseConfig] = useState<SupabaseConfig>(getStoredSupabaseConfig());
+  const [settings, setSettings] = useState<AppSettings>(getStoredSettings());
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [reviewData, setReviewData] = useState<{ source: string; text: string; type: string } | null>(null);
 
   useEffect(() => {
-    // Reload config when dialog closes/updates
     if (!isConfigOpen) {
-      setSupabaseConfig(getStoredSupabaseConfig());
+      setSettings(getStoredSettings());
     }
   }, [isConfigOpen]);
 
@@ -51,7 +50,6 @@ export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
 
     setFiles(prev => [...prev, ...newFiles]);
     
-    // Auto-process based on type
     for (const fileObj of newFiles) {
       processFile(fileObj);
     }
@@ -69,16 +67,14 @@ export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
         text = result.text;
         isScanned = result.isScanned;
 
-        if (isScanned && supabaseConfig.enabled) {
-          // Auto-escalate to Supabase OCR if enabled
-          text = await processWithSupabase(fileObj.file, 'ocr', supabaseConfig);
-          isScanned = false; // Resolved by OCR
+        if (isScanned && settings.supabase.enabled) {
+          text = await processWithSupabase(fileObj.file, 'ocr', settings.supabase);
+          isScanned = false;
         }
       } else if (fileObj.type === 'audio') {
-        if (supabaseConfig.enabled) {
-          text = await processWithSupabase(fileObj.file, 'transcribe', supabaseConfig);
+        if (settings.supabase.enabled) {
+          text = await processWithSupabase(fileObj.file, 'transcribe', settings.supabase);
         } else {
-          // Fallback or error if no local transcription
           throw new Error("Supabase required for audio");
         }
       } else {
@@ -88,13 +84,12 @@ export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
       updateFileStatus(fileObj.id, isScanned ? 'error' : 'completed', text, undefined, isScanned);
       
       if (!isScanned) {
-        // Trigger review for successful extraction
         setReviewData({ source: fileObj.file.name, text, type: fileObj.type });
       }
 
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      updateFileStatus(fileObj.id, 'error', undefined, "Processing failed");
+      updateFileStatus(fileObj.id, 'error', undefined, err.message || "Processing failed");
     }
   };
 
@@ -114,7 +109,6 @@ export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
   const { getRootProps: getAudioProps, getInputProps: getAudioInputProps } = useDropzone({
     accept: { 'audio/*': ['.mp3', '.wav', '.m4a'], 'text/plain': ['.txt'] },
     onDrop: (f) => {
-      // Check file type manually for the mixed dropzone
       const audioFiles = f.filter(file => file.type.startsWith('audio'));
       const textFiles = f.filter(file => file.type === 'text/plain' || file.name.endsWith('.txt'));
       
@@ -129,9 +123,9 @@ export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
         <h3 className="text-sm font-semibold flex items-center">
           <Upload className="w-4 h-4 mr-2" /> Uploads & Extraction
         </h3>
-        <Button variant="ghost" size="xs" onClick={() => setIsConfigOpen(true)} className={supabaseConfig.enabled ? "text-green-600" : "text-muted-foreground"}>
+        <Button variant="ghost" size="xs" onClick={() => setIsConfigOpen(true)} className={settings.supabase.enabled ? "text-green-600" : "text-muted-foreground"}>
           <Settings2 className="w-3 h-3 mr-1" />
-          {supabaseConfig.enabled ? "Cloud Active" : "Local Mode"}
+          {settings.supabase.enabled ? "Cloud Active" : "Local Mode"}
         </Button>
       </div>
 
@@ -177,7 +171,7 @@ export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
               {file.isScanned && (
                 <div className="mt-2 text-[10px] text-amber-600 bg-amber-50 p-1.5 rounded flex items-center justify-between">
                   <span className="flex items-center"><AlertTriangle className="w-3 h-3 mr-1" /> Scanned PDF</span>
-                  {supabaseConfig.enabled ? (
+                  {settings.supabase.enabled ? (
                     <span className="text-green-600 font-medium">Auto-OCR active</span>
                   ) : (
                     <Button variant="outline" size="xs" className="h-5 text-[10px] bg-white" onClick={() => setIsConfigOpen(true)}>Enable OCR</Button>
@@ -204,7 +198,7 @@ export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
         </div>
       )}
 
-      {!supabaseConfig.enabled ? (
+      {!settings.supabase.enabled ? (
         <Alert className="py-2 bg-slate-50 border-slate-200">
           <ShieldAlert className="h-4 w-4 text-slate-500" />
           <AlertTitle className="text-xs font-semibold text-slate-700">Privacy Mode: Local Only</AlertTitle>
@@ -223,13 +217,13 @@ export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
         </Alert>
       )}
 
-      <SupabaseConfigDialog 
+      <SettingsDialog 
         open={isConfigOpen} 
         onOpenChange={setIsConfigOpen} 
-        config={supabaseConfig}
+        settings={settings}
         onSave={(c) => {
-          saveSupabaseConfig(c);
-          setSupabaseConfig(c);
+          setSettings(c);
+          saveSettings(c);
         }}
       />
 

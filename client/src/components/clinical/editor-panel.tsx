@@ -38,7 +38,7 @@ export function EditorPanel({ inputs, setInputs, onGenerate }: EditorPanelProps)
          const currentContent = newInputs[target] as string;
          const separator = currentContent ? "\n\n" : "";
          const sourceLabel = `[Extracted from ${data.source}]\n`;
-         newInputs[target] = `${currentContent}${separator}${sourceLabel}${data.text}`;
+         (newInputs as any)[target] = `${currentContent}${separator}${sourceLabel}${data.text}`;
          mappedCount++;
        }
     });
