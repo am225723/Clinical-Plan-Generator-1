@@ -9,6 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileText, Stethoscope, ClipboardList, User, Settings, Sparkles, Database } from "lucide-react";
 import { ClinicalInputs, DEMO_DATA } from "@/lib/clinical-generator";
+import { FileUploadArea } from "@/components/clinical/file-upload-area";
+import { useToast } from "@/hooks/use-toast";
 
 interface EditorPanelProps {
   inputs: ClinicalInputs;
@@ -17,12 +19,35 @@ interface EditorPanelProps {
 }
 
 export function EditorPanel({ inputs, setInputs, onGenerate }: EditorPanelProps) {
+  const { toast } = useToast();
+
   const handleChange = (field: keyof ClinicalInputs, value: string | boolean) => {
     setInputs({ ...inputs, [field]: value });
   };
 
   const loadDemo = () => {
     setInputs({ ...inputs, ...DEMO_DATA });
+  };
+
+  const handleDataExtracted = (data: { source: string; text: string; targets: (keyof ClinicalInputs)[] }) => {
+    const newInputs = { ...inputs };
+    let mappedCount = 0;
+
+    data.targets.forEach((target) => {
+       if (typeof newInputs[target] === 'string') {
+         const currentContent = newInputs[target] as string;
+         const separator = currentContent ? "\n\n" : "";
+         const sourceLabel = `[Extracted from ${data.source}]\n`;
+         newInputs[target] = `${currentContent}${separator}${sourceLabel}${data.text}`;
+         mappedCount++;
+       }
+    });
+
+    setInputs(newInputs);
+    toast({
+      title: "Data Merged",
+      description: `Content extracted from ${data.source} mapped to ${mappedCount} sections.`,
+    });
   };
 
   return (
@@ -67,6 +92,9 @@ export function EditorPanel({ inputs, setInputs, onGenerate }: EditorPanelProps)
                 </div>
              </CardContent>
           </Card>
+
+          {/* New Upload Area */}
+          <FileUploadArea onDataExtracted={handleDataExtracted} />
 
           <Tabs defaultValue="intake" className="w-full">
             <TabsList className="grid w-full grid-cols-4 mb-2">
