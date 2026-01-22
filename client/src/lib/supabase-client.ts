@@ -206,19 +206,24 @@ export const listDocuments = async (patientId?: string): Promise<{ files: any[];
 export const processWithSupabase = async (
   file: File, 
   type: 'ocr' | 'transcribe', 
-  config: SupabaseConfig
+  config: SupabaseConfig,
+  patientId?: string
 ): Promise<string> => {
   if (!config.enabled) throw new Error("Supabase is not enabled");
 
   const supabase = getSupabaseClient(config);
   if (!supabase) throw new Error("Invalid Supabase configuration");
 
-  // 1. Upload to Storage
-  const { path, error: uploadError } = await uploadDocument(file);
+  // 1. Upload to Storage (pass patientId for proper organization)
+  const { path, error: uploadError } = await uploadDocument(file, patientId);
   
   if (uploadError) {
-    console.error("Supabase Upload Error:", uploadError);
-    // For demo, continue with simulated response
+    // Return clear error message instead of continuing with empty path
+    throw new Error(`File upload failed: ${uploadError.message}. Please check that the '${BUCKET_NAME}' storage bucket exists in your Supabase project.`);
+  }
+
+  if (!path) {
+    throw new Error("Upload succeeded but no path was returned");
   }
 
   // 2. Try to call Edge Function if configured
@@ -234,17 +239,64 @@ export const processWithSupabase = async (
     console.log("Edge function not available, using simulated response");
   }
   
-  // Fallback: Simulate processing
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  // Fallback: Return confirmation with storage location
+  // Note: Actual OCR/transcription requires edge function setup
+  await new Promise(resolve => setTimeout(resolve, 500));
 
   if (type === 'ocr') {
-    return `[OCR Result for ${file.name}]\nStored at: ${BUCKET_NAME}/${path || 'pending'}\n\n(Note: Configure Supabase Edge Function for actual OCR processing)`;
+    return `[File Uploaded Successfully]\nStored at: ${BUCKET_NAME}/${path}\n\nNote: For automatic OCR text extraction, configure a Supabase Edge Function named 'process-document'.`;
   } else {
-    return `[Transcription Result for ${file.name}]\nStored at: ${BUCKET_NAME}/${path || 'pending'}\n\n[00:00:00] (Configure Supabase Edge Function for actual audio transcription)`;
+    return `[Audio Uploaded Successfully]\nStored at: ${BUCKET_NAME}/${path}\n\nNote: For automatic audio transcription, configure a Supabase Edge Function named 'process-document'.`;
   }
 };
 
 // ==================== DATABASE OPERATIONS ====================
+// 
+// REQUIRED SUPABASE SCHEMA:
+// Run this SQL in your Supabase SQL Editor to create the required tables:
+//
+// -- Patients table
+// CREATE TABLE patients (
+//   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+//   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+//   client_id TEXT NOT NULL,
+//   name TEXT NOT NULL,
+//   dob TEXT,
+//   created_at TIMESTAMPTZ DEFAULT NOW(),
+//   updated_at TIMESTAMPTZ DEFAULT NOW()
+// );
+//
+// -- Treatment plans table
+// CREATE TABLE treatment_plans (
+//   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+//   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+//   patient_id TEXT,
+//   client_id TEXT,
+//   inputs JSONB,
+//   generated_plan JSONB,
+//   date_of_service TEXT,
+//   created_at TIMESTAMPTZ DEFAULT NOW(),
+//   updated_at TIMESTAMPTZ DEFAULT NOW()
+// );
+//
+// -- Enable RLS
+// ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
+// ALTER TABLE treatment_plans ENABLE ROW LEVEL SECURITY;
+//
+// -- RLS Policies (users can only access their own data)
+// CREATE POLICY "Users can view own patients" ON patients FOR SELECT USING (auth.uid() = user_id);
+// CREATE POLICY "Users can insert own patients" ON patients FOR INSERT WITH CHECK (auth.uid() = user_id);
+// CREATE POLICY "Users can update own patients" ON patients FOR UPDATE USING (auth.uid() = user_id);
+// CREATE POLICY "Users can delete own patients" ON patients FOR DELETE USING (auth.uid() = user_id);
+//
+// CREATE POLICY "Users can view own plans" ON treatment_plans FOR SELECT USING (auth.uid() = user_id);
+// CREATE POLICY "Users can insert own plans" ON treatment_plans FOR INSERT WITH CHECK (auth.uid() = user_id);
+// CREATE POLICY "Users can update own plans" ON treatment_plans FOR UPDATE USING (auth.uid() = user_id);
+// CREATE POLICY "Users can delete own plans" ON treatment_plans FOR DELETE USING (auth.uid() = user_id);
+//
+// -- Storage bucket (create in Supabase Dashboard > Storage)
+// -- Bucket name: clinical_documents
+// -- Enable RLS and add policies for authenticated user access
 
 // Patients
 export const createPatient = async (patient: Omit<PatientRecord, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<{ data: PatientRecord | null; error: Error | null }> => {

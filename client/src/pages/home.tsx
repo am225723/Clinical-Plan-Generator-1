@@ -9,11 +9,11 @@ import { AuthModal } from "@/components/auth/auth-modal";
 import { SettingsModal } from "@/components/settings/supabase-settings";
 import { Button } from "@/components/ui/button";
 import { saveTreatmentPlan } from "@/lib/supabase-client";
-import { Settings, LogIn, LogOut, User, Save, Cloud, CloudOff } from "lucide-react";
+import { Settings, LogIn, LogOut, User, Save, Cloud, CloudOff, AlertCircle } from "lucide-react";
 
 export default function Home() {
   const { toast } = useToast();
-  const { user, loading: authLoading, isConfigured, signIn, signUp, signOut } = useSupabaseAuth();
+  const { user, loading: authLoading, isConfigured, connectionVerified, error: authError, signIn, signUp, signOut } = useSupabaseAuth();
   
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -120,12 +120,17 @@ export default function Home() {
         </h1>
         
         <div className="ml-auto flex items-center space-x-2">
-          {/* Cloud status indicator */}
+          {/* Cloud status indicator - only show "Connected" when actually verified */}
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground mr-2">
-            {isConfigured ? (
+            {isConfigured && connectionVerified ? (
               <>
                 <Cloud className="h-4 w-4 text-green-500" />
                 <span className="hidden sm:inline">Supabase Connected</span>
+              </>
+            ) : isConfigured && authError ? (
+              <>
+                <AlertCircle className="h-4 w-4 text-amber-500" />
+                <span className="hidden sm:inline text-amber-600">Connection Issue</span>
               </>
             ) : (
               <>
