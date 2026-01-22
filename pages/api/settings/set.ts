@@ -26,7 +26,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { type, settings } = req.body;
 
-    if (type === 'app' && profile.role === 'admin') {
+    if (type === 'app') {
+      if (profile.role !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden - only admins can update app settings' });
+      }
       const { error } = await supabase
         .from('app_settings')
         .upsert({
@@ -36,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
 
       if (error) throw error;
-    } else if (type === 'doctor') {
+    } else if (type === 'doctor' && (profile.role === 'doctor' || profile.role === 'admin')) {
       const { error } = await supabase
         .from('doctor_document_settings')
         .upsert({

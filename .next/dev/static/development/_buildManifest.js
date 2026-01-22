@@ -11,6 +11,7 @@ self.__BUILD_MANIFEST = {
     "/admin",
     "/api/admin/create-user",
     "/api/admin/update-user",
+    "/api/generate-pdf",
     "/api/generate-treatment-plan",
     "/api/settings/get",
     "/api/settings/set",
