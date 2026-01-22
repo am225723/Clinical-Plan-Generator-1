@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { 
   getSupabaseClient, 
+  isSupabaseConfigured,
   signIn as supabaseSignIn, 
   signUp as supabaseSignUp, 
   signOut as supabaseSignOut,
   getCurrentSession,
   onAuthStateChange
 } from '@/lib/supabase-client';
-import { getStoredSettings } from '@/lib/app-settings';
 
 interface AuthState {
   user: User | null;
@@ -30,22 +30,35 @@ export function useSupabaseAuth() {
   });
 
   useEffect(() => {
-    const settings = getStoredSettings();
-    const isConfigured = settings.supabase.enabled && !!settings.supabase.url && !!settings.supabase.anonKey;
+    const configured = isSupabaseConfigured();
     
-    if (!isConfigured) {
-      setAuthState({ user: null, session: null, loading: false, isConfigured: false, connectionVerified: false, error: null });
+    if (!configured) {
+      setAuthState({ 
+        user: null, 
+        session: null, 
+        loading: false, 
+        isConfigured: false, 
+        connectionVerified: false, 
+        error: null 
+      });
       return;
     }
 
     // Initialize client
-    const client = getSupabaseClient(settings.supabase);
+    const client = getSupabaseClient();
     if (!client) {
-      setAuthState({ user: null, session: null, loading: false, isConfigured: false, connectionVerified: false, error: 'Failed to initialize Supabase client' });
+      setAuthState({ 
+        user: null, 
+        session: null, 
+        loading: false, 
+        isConfigured: false, 
+        connectionVerified: false, 
+        error: 'Failed to initialize Supabase client' 
+      });
       return;
     }
     
-    // Get initial session (more reliable than getUser for initial state)
+    // Get initial session
     const initAuth = async () => {
       try {
         const session = await getCurrentSession();

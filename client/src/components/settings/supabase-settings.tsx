@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { getStoredSettings, saveSettings, AppSettings } from '@/lib/app-settings';
-import { testConnection, getSupabaseClient } from '@/lib/supabase-client';
+import { testConnection, isSupabaseConfigured } from '@/lib/supabase-client';
 import { Loader2, CheckCircle, XCircle, Database, Upload, Shield, Key, Bot } from 'lucide-react';
 
 interface SettingsModalProps {
@@ -21,6 +21,7 @@ export function SettingsModal({ open, onOpenChange, onSettingsChange }: Settings
   const [settings, setSettings] = useState<AppSettings>(getStoredSettings());
   const [testing, setTesting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'untested' | 'success' | 'error'>('untested');
+  const supabaseConfigured = isSupabaseConfigured();
 
   useEffect(() => {
     if (open) {
@@ -31,9 +32,6 @@ export function SettingsModal({ open, onOpenChange, onSettingsChange }: Settings
 
   const handleTestConnection = async () => {
     setTesting(true);
-    
-    // Initialize client with current settings
-    getSupabaseClient(settings.supabase);
     
     const { success, error } = await testConnection();
     setTesting(false);
@@ -49,12 +47,6 @@ export function SettingsModal({ open, onOpenChange, onSettingsChange }: Settings
 
   const handleSave = () => {
     saveSettings(settings);
-    
-    // Reinitialize client with new settings
-    if (settings.supabase.enabled) {
-      getSupabaseClient(settings.supabase);
-    }
-    
     toast({ title: 'Settings Saved', description: 'Your configuration has been updated.' });
     onSettingsChange?.();
     onOpenChange(false);
@@ -65,7 +57,7 @@ export function SettingsModal({ open, onOpenChange, onSettingsChange }: Settings
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Application Settings</DialogTitle>
-          <DialogDescription>Configure Supabase and AI integrations for your clinical documentation.</DialogDescription>
+          <DialogDescription>Configure AI integrations for your clinical documentation.</DialogDescription>
         </DialogHeader>
         
         <Tabs defaultValue="supabase" className="mt-4">
@@ -81,58 +73,17 @@ export function SettingsModal({ open, onOpenChange, onSettingsChange }: Settings
           </TabsList>
           
           <TabsContent value="supabase" className="space-y-6 mt-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Enable Supabase</Label>
-                <p className="text-sm text-muted-foreground">Use Supabase for storage, auth, and database</p>
-              </div>
-              <Switch 
-                checked={settings.supabase.enabled}
-                onCheckedChange={(checked) => setSettings(s => ({ 
-                  ...s, 
-                  supabase: { ...s.supabase, enabled: checked } 
-                }))}
-                data-testid="switch-supabase-enabled"
-              />
-            </div>
-            
-            {settings.supabase.enabled && (
+            {supabaseConfigured ? (
               <>
-                <div className="space-y-2">
-                  <Label htmlFor="supabase-url">Project URL</Label>
-                  <Input 
-                    id="supabase-url"
-                    placeholder="https://your-project.supabase.co"
-                    value={settings.supabase.url}
-                    onChange={(e) => setSettings(s => ({ 
-                      ...s, 
-                      supabase: { ...s.supabase, url: e.target.value } 
-                    }))}
-                    data-testid="input-supabase-url"
-                  />
-                  <p className="text-xs text-muted-foreground">Found in Supabase Dashboard → Settings → API</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="supabase-key">Anon Key</Label>
-                  <Input 
-                    id="supabase-key"
-                    type="password"
-                    placeholder="eyJhbGciOiJIUzI1NiIs..."
-                    value={settings.supabase.anonKey}
-                    onChange={(e) => setSettings(s => ({ 
-                      ...s, 
-                      supabase: { ...s.supabase, anonKey: e.target.value } 
-                    }))}
-                    data-testid="input-supabase-key"
-                  />
-                  <p className="text-xs text-muted-foreground">The "anon public" key from your Supabase project</p>
+                <div className="rounded-lg bg-green-50 border border-green-200 p-4 text-sm text-green-800">
+                  <CheckCircle className="h-4 w-4 inline mr-2" />
+                  Supabase is configured via environment variables.
                 </div>
                 
                 <Button 
                   variant="outline" 
                   onClick={handleTestConnection} 
-                  disabled={testing || !settings.supabase.url || !settings.supabase.anonKey}
+                  disabled={testing}
                   className="w-full"
                   data-testid="button-test-connection"
                 >
@@ -160,13 +111,23 @@ export function SettingsModal({ open, onOpenChange, onSettingsChange }: Settings
                   </div>
                 </div>
               </>
+            ) : (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
+                <p className="font-medium mb-2">Supabase Not Configured</p>
+                <p>Set the following environment variables to enable Supabase:</p>
+                <ul className="mt-2 list-disc list-inside space-y-1">
+                  <li><code className="bg-amber-100 px-1 rounded">VITE_SUPABASE_URL</code></li>
+                  <li><code className="bg-amber-100 px-1 rounded">VITE_SUPABASE_ANON_KEY</code></li>
+                </ul>
+                <p className="mt-2 text-xs">For Vercel deployment, add these in your Vercel project settings.</p>
+              </div>
             )}
           </TabsContent>
           
           <TabsContent value="ai" className="space-y-6 mt-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Enable AI Generation</Label>
+                <Label>Enable Custom AI Key</Label>
                 <p className="text-sm text-muted-foreground">Use your own API key for AI features</p>
               </div>
               <Switch 
