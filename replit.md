@@ -4,6 +4,8 @@
 
 A clinical treatment plan generator that converts raw clinical inputs (intake forms, session transcripts, assessment scores, provider notes) into structured, print-ready mental health treatment plans. The application uses AI (OpenAI) to generate comprehensive psychiatric documentation including diagnoses with ICD-10/DSM-5-TR codes, SMART treatment goals, and medical decision-making documentation.
 
+**Recent Migration**: Migrated from Express+Vite to Next.js Pages Router with Supabase Auth and role-based access control (admin/doctor).
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -11,39 +13,41 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Frontend Architecture
-- **Framework**: React 18 with TypeScript
-- **Routing**: Wouter (lightweight React router)
-- **State Management**: TanStack React Query for server state, React useState for local state
+- **Framework**: Next.js 15 with Pages Router
+- **Language**: TypeScript with ESM modules
 - **UI Components**: shadcn/ui component library with Radix UI primitives
-- **Styling**: Tailwind CSS v4 with CSS variables for theming
-- **Build Tool**: Vite with custom plugins for Replit integration
-
-The frontend uses a resizable panel layout with an editor panel for clinical inputs and a document viewer for the generated treatment plan. Local storage is used for autosaving inputs and generated plans.
+- **Styling**: Tailwind CSS v4 with CSS variables via `@theme` directive
+- **State Management**: React useState for local state, Context API for Supabase auth
 
 ### Backend Architecture
-- **Runtime**: Node.js with Express
+- **Runtime**: Node.js with Next.js custom server
 - **Language**: TypeScript with ESM modules
-- **API Pattern**: RESTful endpoints under `/api/*`
+- **API Pattern**: Next.js API routes under `/pages/api/*`
 - **AI Integration**: OpenAI API via Replit AI Integrations for treatment plan generation
+- **Server Entry**: `server/index.ts` runs a custom Next.js server
 
-The server handles treatment plan generation by sending structured prompts to OpenAI and returning formatted JSON responses. The build process uses esbuild for server bundling with selective dependency bundling to optimize cold start times.
+### Pages Structure
+- `/pages/index.tsx` - Root page (redirects to admin or doctor based on role)
+- `/pages/login.tsx` - Login page with Supabase Auth
+- `/pages/admin/index.tsx` - Admin dashboard with user management
+- `/pages/doctor/index.tsx` - Doctor dashboard with AI controls and treatment plan generation
+- `/pages/settings.tsx` - Settings page for AI prompts and document configuration
+- `/pages/api/generate-treatment-plan.ts` - Treatment plan generation API
 
 ### Data Storage
-- **Database**: PostgreSQL via Drizzle ORM
-- **Schema Location**: `shared/schema.ts`
+- **Database**: PostgreSQL via Drizzle ORM (local) + Supabase PostgreSQL (auth/profiles)
+- **Schema Location**: `shared/schema.ts` (Drizzle), `NEXTJS_SUPABASE_SETUP.sql` (Supabase)
 - **Migrations**: Managed via `drizzle-kit push`
-- **Session Storage**: In-memory storage class with interface for future database migration
-- **Client-side**: LocalStorage for settings, inputs, and generated plans
-
-The schema currently defines a users table with UUID primary keys. Chat-related tables (conversations, messages) are defined in `shared/models/chat.ts` for potential voice/chat features.
+- **Client-side**: LocalStorage for settings and inputs
 
 ### Authentication
-- **Provider**: Supabase Auth (optional, client-configured)
-- **Storage**: Browser localStorage for Supabase credentials and settings
-- **Features**: Sign in, sign up, sign out with connection testing
-- **State Management**: Custom `useSupabaseAuth` hook
-
-Authentication is opt-in and configured through a settings modal. Users can connect their own Supabase project for cloud features.
+- **Provider**: Supabase Auth (required, configured via environment variables)
+- **Library**: `@supabase/ssr` for server-side rendering support
+- **Role-Based Access Control**:
+  - `admin`: Access to user management, app settings
+  - `doctor`: Access to treatment plan generation, document settings
+- **Server-Side Protection**: `requireAdmin()` and `requireDoctor()` functions in `lib/auth.ts`
+- **Client-Side State**: Context provider in `pages/_app.tsx` with `useSupabase()` hook
 
 ## External Dependencies
 
@@ -51,24 +55,34 @@ Authentication is opt-in and configured through a settings modal. Users can conn
 - **OpenAI API**: Primary AI provider for treatment plan generation
   - Configured via `AI_INTEGRATIONS_OPENAI_API_KEY` and `AI_INTEGRATIONS_OPENAI_BASE_URL` environment variables
   - Used for structured clinical document generation with JSON output format
-  - Also supports image generation (`gpt-image-1`), speech-to-text, and text-to-speech
 
 ### Database
 - **PostgreSQL**: Primary database
   - Connection via `DATABASE_URL` environment variable
   - ORM: Drizzle with `drizzle-zod` for schema validation
+- **Supabase PostgreSQL**: Auth and profiles database
+  - Connection via `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` secrets
 
-### Optional Integrations
-- **Supabase**: Optional cloud backend for authentication and storage
-  - Client-side configuration stored in localStorage
-  - Used for OCR, transcription, and document storage when enabled
-- **PDF.js**: Client-side PDF text extraction
-- **FFmpeg**: Server-side audio conversion (WebM to WAV) for voice features
+### Supabase Edge Functions (to be deployed)
+- `admin-create-user`: Create new doctor users
+- `admin-update-user`: Update user profiles
+- `settings-get`: Get app/document settings
+- `settings-set`: Update settings
+- `logo-upload-sign`: Get signed URL for logo upload
+- `pdf-generate`: Generate treatment plan PDFs
 
 ### Key NPM Packages
-- `@tanstack/react-query`: Server state management
+- `next`: Next.js framework
+- `@supabase/ssr`: Supabase SSR support
+- `@supabase/supabase-js`: Supabase client
 - `drizzle-orm` / `drizzle-kit`: Database ORM and migrations
 - `openai`: OpenAI API client
-- `react-dropzone`: File upload handling
-- `date-fns`: Date formatting
+- `tailwindcss` / `@tailwindcss/postcss`: Styling
 - `zod`: Schema validation
+
+## Environment Variables
+- `VITE_SUPABASE_URL`: Supabase project URL (secret)
+- `VITE_SUPABASE_ANON_KEY`: Supabase anonymous key (secret)
+- `AI_INTEGRATIONS_OPENAI_API_KEY`: OpenAI API key (via Replit integrations)
+- `AI_INTEGRATIONS_OPENAI_BASE_URL`: OpenAI base URL (via Replit integrations)
+- `DATABASE_URL`: PostgreSQL connection string

@@ -1,13 +1,12 @@
 import { GetServerSideProps } from 'next';
-import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
-import { getUserProfile } from '@/lib/supabase';
+import { createServerClient, getUserProfile } from '@/lib/supabase';
 
 export default function Home() {
   return null;
 }
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
-  const supabase = createPagesServerClient(ctx);
+  const supabase = createServerClient(ctx);
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {

@@ -1,6 +1,5 @@
-import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
-import type { GetServerSidePropsContext, GetServerSidePropsResult } from 'next';
-import { getUserProfile, type Profile, type UserRole } from './supabase';
+import { createServerClient, getUserProfile, type Profile, type UserRole } from './supabase';
+import type { GetServerSidePropsContext } from 'next';
 
 interface AuthResult {
   redirect?: { destination: string; permanent: boolean };
@@ -11,7 +10,7 @@ export async function requireAuth(
   ctx: GetServerSidePropsContext,
   allowedRoles?: UserRole[]
 ): Promise<AuthResult> {
-  const supabase = createPagesServerClient(ctx);
+  const supabase = createServerClient(ctx);
   
   const { data: { session } } = await supabase.auth.getSession();
 

@@ -1,8 +1,8 @@
 import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/router';
+import { useSupabase } from '../_app';
 import { requireAdmin } from '@/lib/auth';
 import { Profile } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ interface UserWithProfile {
 }
 
 export default function AdminDashboard({ user, profile }: AdminPageProps) {
-  const supabase = useSupabaseClient();
+  const { supabase } = useSupabase();
   const router = useRouter();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserWithProfile[]>([]);

@@ -1,8 +1,8 @@
 import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/router';
+import { useSupabase } from '../_app';
 import { requireDoctor } from '@/lib/auth';
 import { Profile, getAppSettings, getDoctorSettings, DoctorDocumentSettings } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -42,7 +42,7 @@ interface PatientData {
 }
 
 export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
-  const supabase = useSupabaseClient();
+  const { supabase } = useSupabase();
   const router = useRouter();
   const { toast } = useToast();
   
