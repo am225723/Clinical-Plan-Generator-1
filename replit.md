@@ -4,7 +4,7 @@
 
 A clinical treatment plan generator that converts raw clinical inputs (intake forms, session transcripts, assessment scores, provider notes) into structured, print-ready mental health treatment plans. The application uses AI (OpenAI) to generate comprehensive psychiatric documentation including diagnoses with ICD-10/DSM-5-TR codes, SMART treatment goals, and medical decision-making documentation.
 
-**Recent Migration**: Migrated from Express+Vite to Next.js Pages Router with Supabase Auth and role-based access control (admin/doctor).
+**Current Status**: Fully migrated to Next.js Pages Router with Supabase Auth, role-based access control (admin/doctor), and secure API routes.
 
 ## User Preferences
 
@@ -32,7 +32,7 @@ Preferred communication style: Simple, everyday language.
 - `/pages/admin/index.tsx` - Admin dashboard with user management
 - `/pages/doctor/index.tsx` - Doctor dashboard with AI controls and treatment plan generation
 - `/pages/settings.tsx` - Settings page for AI prompts and document configuration
-- `/pages/api/generate-treatment-plan.ts` - Treatment plan generation API
+- `/pages/api/*` - API routes for treatment plan generation, settings, admin, and PDF
 
 ### Data Storage
 - **Database**: PostgreSQL via Drizzle ORM (local) + Supabase PostgreSQL (auth/profiles)
@@ -63,13 +63,14 @@ Preferred communication style: Simple, everyday language.
 - **Supabase PostgreSQL**: Auth and profiles database
   - Connection via `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` secrets
 
-### Supabase Edge Functions (to be deployed)
-- `admin-create-user`: Create new doctor users
-- `admin-update-user`: Update user profiles
-- `settings-get`: Get app/document settings
-- `settings-set`: Update settings
-- `logo-upload-sign`: Get signed URL for logo upload
-- `pdf-generate`: Generate treatment plan PDFs
+### API Routes (Next.js)
+- `/api/admin/create-user` - Create new doctor users (admin only)
+- `/api/admin/update-user` - Update user profiles (admin only)
+- `/api/settings/get` - Get app/document settings
+- `/api/settings/set` - Update settings (role-based)
+- `/api/upload-logo` - Get signed URL for logo upload
+- `/api/generate-pdf` - Generate treatment plan PDF HTML
+- `/api/generate-treatment-plan` - AI-powered treatment plan generation
 
 ### Key NPM Packages
 - `next`: Next.js framework
