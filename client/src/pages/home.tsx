@@ -6,17 +6,15 @@ import { ClinicalInputs, GeneratedPlan, generateTreatmentPlan } from "@/lib/clin
 import { useToast } from "@/hooks/use-toast";
 import { useSupabaseAuth } from "@/hooks/use-supabase-auth";
 import { AuthModal } from "@/components/auth/auth-modal";
-import { SettingsModal } from "@/components/settings/supabase-settings";
 import { Button } from "@/components/ui/button";
 import { saveTreatmentPlan } from "@/lib/supabase-client";
-import { Settings, LogIn, LogOut, User, Save, Cloud, CloudOff, AlertCircle } from "lucide-react";
+import { LogIn, LogOut, User, Save, Cloud, CloudOff, AlertCircle } from "lucide-react";
 
 export default function Home() {
   const { toast } = useToast();
   const { user, loading: authLoading, isConfigured, connectionVerified, error: authError, signIn, signUp, signOut } = useSupabaseAuth();
   
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   
   // Initialize state from localStorage or defaults
   const [inputs, setInputs] = useState<ClinicalInputs>(() => {
@@ -184,15 +182,6 @@ export default function Home() {
             )
           )}
           
-          {/* Settings button */}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setSettingsModalOpen(true)}
-            data-testid="button-settings"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
         </div>
       </header>
       
@@ -220,17 +209,12 @@ export default function Home() {
         </ResizablePanelGroup>
       </div>
       
-      {/* Modals */}
+      {/* Auth Modal */}
       <AuthModal 
         open={authModalOpen} 
         onOpenChange={setAuthModalOpen}
         onSignIn={signIn}
         onSignUp={signUp}
-      />
-      <SettingsModal 
-        open={settingsModalOpen} 
-        onOpenChange={setSettingsModalOpen}
-        onSettingsChange={() => window.location.reload()}
       />
     </div>
   );

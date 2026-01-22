@@ -1,15 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, FileText, Mic, AlertTriangle, Trash2, CheckCircle2, Loader2, Settings2, ShieldAlert } from "lucide-react";
+import { Upload, FileText, Mic, AlertTriangle, Trash2, CheckCircle2, Loader2, Cloud, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { extractTextFromPdf } from "@/lib/pdf-utils";
-import { SettingsDialog } from "@/components/clinical/settings-dialog";
 import { ExtractionReviewDialog } from "@/components/clinical/extraction-review-dialog";
-import { processWithSupabase } from "@/lib/supabase-client";
-import { getStoredSettings, saveSettings, AppSettings } from "@/lib/app-settings";
+import { processWithSupabase, isSupabaseConfigured } from "@/lib/supabase-client";
 import { useToast } from "@/hooks/use-toast";
 import { ClinicalInputs } from "@/lib/clinical-generator";
 
@@ -30,15 +28,10 @@ interface UploadedFile {
 export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
   const { toast } = useToast();
   const [files, setFiles] = useState<UploadedFile[]>([]);
-  const [settings, setSettings] = useState<AppSettings>(getStoredSettings());
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [reviewData, setReviewData] = useState<{ source: string; text: string; type: string } | null>(null);
-
-  useEffect(() => {
-    if (!isConfigOpen) {
-      setSettings(getStoredSettings());
-    }
-  }, [isConfigOpen]);
+  
+  // Supabase is now configured via environment variables
+  const supabaseEnabled = isSupabaseConfigured();
 
   const onDrop = async (acceptedFiles: File[], type: 'pdf' | 'audio' | 'text') => {
     const newFiles = acceptedFiles.map(file => ({
@@ -67,15 +60,15 @@ export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
         text = result.text;
         isScanned = result.isScanned;
 
-        if (isScanned && settings.supabase.enabled) {
-          text = await processWithSupabase(fileObj.file, 'ocr', settings.supabase);
+        if (isScanned && supabaseEnabled) {
+          text = await processWithSupabase(fileObj.file, 'ocr');
           isScanned = false;
         }
       } else if (fileObj.type === 'audio') {
-        if (settings.supabase.enabled) {
-          text = await processWithSupabase(fileObj.file, 'transcribe', settings.supabase);
+        if (supabaseEnabled) {
+          text = await processWithSupabase(fileObj.file, 'transcribe');
         } else {
-          throw new Error("Supabase required for audio");
+          throw new Error("Supabase required for audio transcription");
         }
       } else {
         text = await fileObj.file.text();
@@ -123,10 +116,10 @@ export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
         <h3 className="text-sm font-semibold flex items-center">
           <Upload className="w-4 h-4 mr-2" /> Uploads & Extraction
         </h3>
-        <Button variant="ghost" size="xs" onClick={() => setIsConfigOpen(true)} className={settings.supabase.enabled ? "text-green-600" : "text-muted-foreground"}>
-          <Settings2 className="w-3 h-3 mr-1" />
-          {settings.supabase.enabled ? "Cloud Active" : "Local Mode"}
-        </Button>
+        <div className={`text-xs flex items-center ${supabaseEnabled ? "text-green-600" : "text-muted-foreground"}`}>
+          <Cloud className="w-3 h-3 mr-1" />
+          {supabaseEnabled ? "Cloud Active" : "Local Mode"}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
@@ -171,10 +164,10 @@ export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
               {file.isScanned && (
                 <div className="mt-2 text-[10px] text-amber-600 bg-amber-50 p-1.5 rounded flex items-center justify-between">
                   <span className="flex items-center"><AlertTriangle className="w-3 h-3 mr-1" /> Scanned PDF</span>
-                  {settings.supabase.enabled ? (
+                  {supabaseEnabled ? (
                     <span className="text-green-600 font-medium">Auto-OCR active</span>
                   ) : (
-                    <Button variant="outline" size="xs" className="h-5 text-[10px] bg-white" onClick={() => setIsConfigOpen(true)}>Enable OCR</Button>
+                    <span className="text-amber-600">OCR requires Supabase</span>
                   )}
                 </div>
               )}
@@ -198,12 +191,12 @@ export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
         </div>
       )}
 
-      {!settings.supabase.enabled ? (
+      {!supabaseEnabled ? (
         <Alert className="py-2 bg-slate-50 border-slate-200">
           <ShieldAlert className="h-4 w-4 text-slate-500" />
           <AlertTitle className="text-xs font-semibold text-slate-700">Privacy Mode: Local Only</AlertTitle>
           <AlertDescription className="text-[10px] text-slate-500">
-            Files are processed in-browser. Enable Supabase for OCR & Transcription.
+            Files are processed in-browser. Supabase not configured for OCR & Transcription.
           </AlertDescription>
         </Alert>
       ) : (
@@ -211,21 +204,10 @@ export function FileUploadArea({ onDataExtracted }: FileUploadAreaProps) {
           <ShieldAlert className="h-4 w-4 text-green-600" />
           <AlertTitle className="text-xs font-semibold text-green-700">Cloud Features Active</AlertTitle>
           <AlertDescription className="text-[10px] text-green-600">
-            Files may be temporarily stored for processing. 
-            <Button variant="link" className="h-auto p-0 ml-1 text-[10px] text-green-800 underline">Delete stored files</Button>
+            Files may be temporarily stored for processing via Supabase Edge Functions.
           </AlertDescription>
         </Alert>
       )}
-
-      <SettingsDialog 
-        open={isConfigOpen} 
-        onOpenChange={setIsConfigOpen} 
-        settings={settings}
-        onSave={(c) => {
-          setSettings(c);
-          saveSettings(c);
-        }}
-      />
 
       {reviewData && (
         <ExtractionReviewDialog 
