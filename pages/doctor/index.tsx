@@ -147,27 +147,37 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
     setIsDownloading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('pdf-generate', {
-        body: {
+      const response = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           patientData,
           treatmentPlan: generatedPlan,
           doctorSettings,
-        },
+        }),
       });
 
-      if (error) throw error;
+      const data = await response.json();
 
-      if (data.missing_fields) {
-        toast({ 
-          title: 'Missing Fields', 
-          description: `Please fill in: ${data.missing_fields.join(', ')}`, 
-          variant: 'destructive' 
-        });
-        return;
+      if (!response.ok) {
+        if (data.missing_fields) {
+          toast({ 
+            title: 'Missing Fields', 
+            description: `Please fill in: ${data.missing_fields.join(', ')}`, 
+            variant: 'destructive' 
+          });
+          return;
+        }
+        throw new Error(data.error);
       }
 
-      if (data.pdf_url) {
-        window.open(data.pdf_url, '_blank');
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(data.html);
+        printWindow.document.close();
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
       }
     } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });

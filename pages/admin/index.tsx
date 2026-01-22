@@ -66,17 +66,25 @@ export default function AdminDashboard({ user, profile }: AdminPageProps) {
     e.preventDefault();
     setSubmitting(true);
 
-    const { data, error } = await supabase.functions.invoke('admin-create-user', {
-      body: formData
-    });
+    try {
+      const response = await fetch('/api/admin/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
 
-    if (error) {
-      toast({ title: 'Error', description: error.message || 'Failed to create user', variant: 'destructive' });
-    } else {
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create user');
+      }
+
       toast({ title: 'Success', description: 'User created successfully' });
       setCreateDialogOpen(false);
       setFormData({ email: '', password: '', full_name: '' });
       fetchUsers();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Failed to create user', variant: 'destructive' });
     }
     setSubmitting(false);
   };
@@ -86,16 +94,24 @@ export default function AdminDashboard({ user, profile }: AdminPageProps) {
     if (!selectedUser) return;
     setSubmitting(true);
 
-    const { error } = await supabase.functions.invoke('admin-update-user', {
-      body: { user_id: selectedUser.id, ...editFormData }
-    });
+    try {
+      const response = await fetch('/api/admin/update-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: selectedUser.id, ...editFormData })
+      });
 
-    if (error) {
-      toast({ title: 'Error', description: error.message || 'Failed to update user', variant: 'destructive' });
-    } else {
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update user');
+      }
+
       toast({ title: 'Success', description: 'User updated successfully' });
       setEditDialogOpen(false);
       fetchUsers();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Failed to update user', variant: 'destructive' });
     }
     setSubmitting(false);
   };

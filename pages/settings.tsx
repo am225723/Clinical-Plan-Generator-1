@@ -3,7 +3,7 @@ import Head from 'next/head';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useSupabase } from './_app';
-import { requireAdmin } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
 import { Profile, DoctorDocumentSettings } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,22 +57,19 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
   const loadSettings = async () => {
     setLoading(true);
     
-    const { data: appData, error: appError } = await supabase.functions.invoke('settings-get');
-    
-    if (!appError && appData?.treatment_plan_prompt) {
-      setAiPrompt(appData.treatment_plan_prompt);
-    }
-
-    if (profile.role === 'doctor') {
-      const { data: docData, error: docError } = await supabase
-        .from('doctor_document_settings')
-        .select('*')
-        .eq('doctor_id', user.id)
-        .single();
-
-      if (!docError && docData) {
-        setDoctorSettings(docData);
+    try {
+      const response = await fetch('/api/settings/get');
+      const data = await response.json();
+      
+      if (response.ok && data.appSettings?.treatment_plan_prompt) {
+        setAiPrompt(data.appSettings.treatment_plan_prompt);
       }
+
+      if (data.doctorSettings) {
+        setDoctorSettings(data.doctorSettings);
+      }
+    } catch (err) {
+      console.error('Failed to load settings:', err);
     }
 
     setLoading(false);
@@ -81,14 +78,20 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
   const handleSaveAiPrompt = async () => {
     setSaving(true);
     
-    const { error } = await supabase.functions.invoke('settings-set', {
-      body: { treatment_plan_prompt: aiPrompt }
-    });
+    try {
+      const response = await fetch('/api/settings/set', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'app', settings: { treatment_plan_prompt: aiPrompt } })
+      });
 
-    if (error) {
-      toast({ title: 'Error', description: 'Failed to save AI prompt', variant: 'destructive' });
-    } else {
+      if (!response.ok) {
+        throw new Error('Failed to save');
+      }
+
       toast({ title: 'Saved', description: 'AI prompt updated successfully' });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to save AI prompt', variant: 'destructive' });
     }
     
     setSaving(false);
@@ -97,18 +100,20 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
   const handleSaveDoctorSettings = async () => {
     setSaving(true);
     
-    const { error } = await supabase
-      .from('doctor_document_settings')
-      .upsert({
-        doctor_id: user.id,
-        ...doctorSettings,
-        updated_at: new Date().toISOString(),
+    try {
+      const response = await fetch('/api/settings/set', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'doctor', settings: doctorSettings })
       });
 
-    if (error) {
-      toast({ title: 'Error', description: 'Failed to save settings', variant: 'destructive' });
-    } else {
+      if (!response.ok) {
+        throw new Error('Failed to save');
+      }
+
       toast({ title: 'Saved', description: 'Document settings updated' });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to save settings', variant: 'destructive' });
     }
     
     setSaving(false);
@@ -121,11 +126,17 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
     setUploading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('logo-upload-sign', {
-        body: { filename: file.name, contentType: file.type }
+      const response = await fetch('/api/upload-logo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, contentType: file.type })
       });
 
-      if (error) throw error;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to get upload URL');
+      }
 
       const uploadResponse = await fetch(data.signedUrl, {
         method: 'PUT',
@@ -375,5 +386,5 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
 }
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
-  return requireAdmin(ctx);
+  return requireAuth(ctx);
 };

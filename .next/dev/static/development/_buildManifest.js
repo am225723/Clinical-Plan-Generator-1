@@ -9,7 +9,12 @@ self.__BUILD_MANIFEST = {
     "/_app",
     "/_error",
     "/admin",
+    "/api/admin/create-user",
+    "/api/admin/update-user",
     "/api/generate-treatment-plan",
+    "/api/settings/get",
+    "/api/settings/set",
+    "/api/upload-logo",
     "/doctor",
     "/login",
     "/settings"
