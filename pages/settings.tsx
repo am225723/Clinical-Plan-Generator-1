@@ -13,8 +13,90 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save, Loader2, Upload, FileText, Settings as SettingsIcon } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ArrowLeft, Save, Loader2, Upload, FileText, Settings as SettingsIcon, Plus, Trash2, Edit, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
+interface DocumentTemplate {
+  id: string;
+  name: string;
+  template_type: string;
+  ai_prompt: string;
+  pdf_config: any;
+  is_default: boolean;
+  created_at: string;
+}
+
+const TEMPLATE_TYPES = [
+  { value: 'treatment_plan', label: 'Treatment Plan' },
+  { value: 'darp_note', label: 'DARP Note' },
+  { value: 'psych_note', label: 'Psychiatric Note' },
+  { value: 'progress_note', label: 'Progress Note' },
+  { value: 'discharge_summary', label: 'Discharge Summary' },
+  { value: 'custom', label: 'Custom' },
+];
+
+const DEFAULT_PROMPTS: Record<string, string> = {
+  treatment_plan: `Role: Expert Clinical Psychiatrist.
+Task: Generate a structured mental health treatment plan JSON from the provided clinical inputs.
+
+REQUIREMENTS:
+- Use professional clinical language
+- Diagnoses must include ICD-10 and DSM-5-TR codes
+- Treatment goals must be SMART (Specific, Measurable, Achievable, Relevant, Time-bound)
+- Include comprehensive risk assessment
+- Document medical decision-making complexity`,
+
+  darp_note: `Role: Clinical Mental Health Provider.
+Task: Generate a DARP (Data, Assessment, Response, Plan) progress note.
+
+REQUIREMENTS:
+- Data: Objective observations and subjective statements
+- Assessment: Clinical interpretation of data
+- Response: Patient response to interventions
+- Plan: Next steps and follow-up
+- Use professional clinical language`,
+
+  psych_note: `Role: Psychiatrist.
+Task: Generate a comprehensive psychiatric evaluation note.
+
+REQUIREMENTS:
+- Include full mental status examination
+- Document psychiatric history and current medications
+- Provide differential diagnosis with ICD-10 codes
+- Include risk assessment
+- Document treatment recommendations`,
+
+  progress_note: `Role: Mental Health Clinician.
+Task: Generate a clinical progress note documenting the therapy session.
+
+REQUIREMENTS:
+- Document presenting concerns
+- Interventions used
+- Patient response and engagement
+- Treatment progress toward goals
+- Plan for next session`,
+
+  discharge_summary: `Role: Clinical Provider.
+Task: Generate a discharge summary for mental health treatment.
+
+REQUIREMENTS:
+- Reason for treatment and presenting problems
+- Course of treatment summary
+- Diagnosis at discharge
+- Current medication list
+- Discharge recommendations and aftercare plan
+- Follow-up appointments`,
+
+  custom: `Role: Clinical Provider.
+Task: Generate clinical documentation based on the provided inputs.
+
+REQUIREMENTS:
+- Use professional clinical language
+- Include relevant diagnostic codes
+- Document clinical findings
+- Provide treatment recommendations`,
+};
 
 interface SettingsPageProps {
   user: any;
@@ -49,9 +131,21 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  
+  const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<DocumentTemplate | null>(null);
+  const [templateForm, setTemplateForm] = useState({
+    name: '',
+    template_type: 'treatment_plan',
+    ai_prompt: DEFAULT_PROMPTS.treatment_plan,
+    is_default: false,
+  });
 
   useEffect(() => {
     loadSettings();
+    loadTemplates();
   }, []);
 
   const loadSettings = async () => {
@@ -73,6 +167,109 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
     }
 
     setLoading(false);
+  };
+
+  const loadTemplates = async () => {
+    setTemplatesLoading(true);
+    try {
+      const response = await fetch('/api/templates');
+      if (response.ok) {
+        const data = await response.json();
+        setTemplates(data);
+      }
+    } catch (err) {
+      console.error('Failed to load templates:', err);
+    }
+    setTemplatesLoading(false);
+  };
+
+  const handleTemplateTypeChange = (type: string) => {
+    setTemplateForm({
+      ...templateForm,
+      template_type: type,
+      ai_prompt: DEFAULT_PROMPTS[type] || DEFAULT_PROMPTS.custom,
+    });
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!templateForm.name.trim()) {
+      toast({ title: 'Error', description: 'Template name is required', variant: 'destructive' });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const method = editingTemplate ? 'PUT' : 'POST';
+      const url = editingTemplate ? `/api/templates/${editingTemplate.id}` : '/api/templates';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(templateForm),
+      });
+
+      if (!response.ok) throw new Error('Failed to save template');
+
+      toast({ title: 'Saved', description: 'Template saved successfully' });
+      setTemplateDialogOpen(false);
+      setEditingTemplate(null);
+      setTemplateForm({
+        name: '',
+        template_type: 'treatment_plan',
+        ai_prompt: DEFAULT_PROMPTS.treatment_plan,
+        is_default: false,
+      });
+      loadTemplates();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to save template', variant: 'destructive' });
+    }
+    setSaving(false);
+  };
+
+  const handleEditTemplate = (template: DocumentTemplate) => {
+    setEditingTemplate(template);
+    setTemplateForm({
+      name: template.name,
+      template_type: template.template_type,
+      ai_prompt: template.ai_prompt,
+      is_default: template.is_default,
+    });
+    setTemplateDialogOpen(true);
+  };
+
+  const handleDeleteTemplate = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this template?')) return;
+
+    try {
+      const response = await fetch(`/api/templates/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete');
+      toast({ title: 'Deleted', description: 'Template deleted' });
+      loadTemplates();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete template', variant: 'destructive' });
+    }
+  };
+
+  const handleDuplicateTemplate = (template: DocumentTemplate) => {
+    setEditingTemplate(null);
+    setTemplateForm({
+      name: `${template.name} (Copy)`,
+      template_type: template.template_type,
+      ai_prompt: template.ai_prompt,
+      is_default: false,
+    });
+    setTemplateDialogOpen(true);
+  };
+
+  const openNewTemplateDialog = () => {
+    setEditingTemplate(null);
+    setTemplateForm({
+      name: '',
+      template_type: 'treatment_plan',
+      ai_prompt: DEFAULT_PROMPTS.treatment_plan,
+      is_default: false,
+    });
+    setTemplateDialogOpen(true);
   };
 
   const handleSaveAiPrompt = async () => {
@@ -158,7 +355,7 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
   const updatePdfStyle = (field: string, value: any) => {
     setDoctorSettings({
       ...doctorSettings,
-      pdf_style: { ...doctorSettings.pdf_style, [field]: value }
+      pdf_style: { font_size: 12, ...doctorSettings.pdf_style, [field]: value }
     });
   };
 
@@ -189,8 +386,11 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
         </header>
 
         <main className="container mx-auto py-8 px-4 max-w-4xl">
-          <Tabs defaultValue="ai">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs defaultValue="templates">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="templates" disabled={profile.role !== 'doctor' && profile.role !== 'admin'}>
+                <FileText className="h-4 w-4 mr-2" /> Templates
+              </TabsTrigger>
               <TabsTrigger value="ai">
                 <SettingsIcon className="h-4 w-4 mr-2" /> AI Configuration
               </TabsTrigger>
@@ -198,6 +398,176 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
                 <FileText className="h-4 w-4 mr-2" /> Document Settings
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="templates" className="mt-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Document Templates</CardTitle>
+                    <CardDescription>
+                      Create templates for different document types with custom AI prompts
+                    </CardDescription>
+                  </div>
+                  <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button onClick={openNewTemplateDialog} data-testid="button-new-template">
+                        <Plus className="h-4 w-4 mr-2" /> New Template
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>{editingTemplate ? 'Edit Template' : 'Create New Template'}</DialogTitle>
+                        <DialogDescription>
+                          Configure a document template with a custom AI prompt
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Template Name</Label>
+                            <Input
+                              value={templateForm.name}
+                              onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
+                              placeholder="e.g., Initial Psychiatric Evaluation"
+                              data-testid="input-template-name"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Document Type</Label>
+                            <Select
+                              value={templateForm.template_type}
+                              onValueChange={handleTemplateTypeChange}
+                            >
+                              <SelectTrigger data-testid="select-template-type">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {TEMPLATE_TYPES.map((type) => (
+                                  <SelectItem key={type.value} value={type.value}>
+                                    {type.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label>AI Prompt</Label>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setTemplateForm({
+                                ...templateForm,
+                                ai_prompt: DEFAULT_PROMPTS[templateForm.template_type] || DEFAULT_PROMPTS.custom
+                              })}
+                            >
+                              Reset to Default
+                            </Button>
+                          </div>
+                          <Textarea
+                            value={templateForm.ai_prompt}
+                            onChange={(e) => setTemplateForm({ ...templateForm, ai_prompt: e.target.value })}
+                            rows={12}
+                            className="font-mono text-sm"
+                            placeholder="Enter the AI prompt for this template type..."
+                            data-testid="textarea-template-prompt"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            This prompt will be used by the AI when generating documents of this type.
+                            Each template type can have its own specialized prompt.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="is_default"
+                            checked={templateForm.is_default}
+                            onChange={(e) => setTemplateForm({ ...templateForm, is_default: e.target.checked })}
+                            className="h-4 w-4"
+                            data-testid="checkbox-default-template"
+                          />
+                          <Label htmlFor="is_default" className="cursor-pointer">
+                            Set as default for this document type
+                          </Label>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setTemplateDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={handleSaveTemplate} disabled={saving} data-testid="button-save-template">
+                          {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                          Save Template
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </CardHeader>
+                <CardContent>
+                  {templatesLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                  ) : templates.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No templates yet</p>
+                      <p className="text-sm">Create your first template to get started</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {templates.map((template) => (
+                        <div
+                          key={template.id}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50"
+                          data-testid={`template-item-${template.id}`}
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{template.name}</span>
+                              {template.is_default && (
+                                <Badge variant="secondary" className="text-xs">Default</Badge>
+                              )}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {TEMPLATE_TYPES.find(t => t.value === template.template_type)?.label || template.template_type}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDuplicateTemplate(template)}
+                              data-testid={`button-duplicate-${template.id}`}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditTemplate(template)}
+                              data-testid={`button-edit-${template.id}`}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteTemplate(template.id)}
+                              className="text-red-600 hover:text-red-700"
+                              data-testid={`button-delete-${template.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="ai" className="mt-6">
               <Card>

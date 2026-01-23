@@ -15,8 +15,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { LogOut, Settings, FileText, Loader2, AlertCircle, Download, Eye, Sparkles } from 'lucide-react';
+import { LogOut, Settings, FileText, Loader2, AlertCircle, Download, Eye, Sparkles, History, Search, Save, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
+interface DocumentTemplate {
+  id: string;
+  name: string;
+  template_type: string;
+  ai_prompt: string;
+  is_default: boolean;
+}
+
+interface SavedDocument {
+  id: string;
+  template_type: string;
+  patient_name: string;
+  client_id: string;
+  date_of_service: string;
+  generated_content: any;
+  patient_data: any;
+  clinical_inputs: any;
+  status: string;
+  created_at: string;
+}
 
 interface DoctorPageProps {
   user: any;
@@ -40,6 +61,15 @@ interface PatientData {
   date_of_service: string;
   provider_name: string;
 }
+
+const TEMPLATE_TYPE_LABELS: Record<string, string> = {
+  treatment_plan: 'Treatment Plan',
+  darp_note: 'DARP Note',
+  psych_note: 'Psychiatric Note',
+  progress_note: 'Progress Note',
+  discharge_summary: 'Discharge Summary',
+  custom: 'Custom',
+};
 
 export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
   const { supabase } = useSupabase();
@@ -68,16 +98,124 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
   const [appendMode, setAppendMode] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [doctorSettings, setDoctorSettings] = useState<DoctorDocumentSettings | null>(null);
+  
+  const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
+  const [activeTab, setActiveTab] = useState('generate');
+  
+  const [savedDocuments, setSavedDocuments] = useState<SavedDocument[]>([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [documentsTotal, setDocumentsTotal] = useState(0);
 
   useEffect(() => {
     loadSettings();
+    loadTemplates();
   }, []);
 
   const loadSettings = async () => {
     const settings = await getDoctorSettings(supabase, user.id);
     setDoctorSettings(settings);
+  };
+
+  const loadTemplates = async () => {
+    try {
+      const response = await fetch('/api/templates');
+      if (response.ok) {
+        const data = await response.json();
+        setTemplates(data);
+        const defaultTemplate = data.find((t: DocumentTemplate) => t.is_default);
+        if (defaultTemplate) setSelectedTemplate(defaultTemplate);
+      }
+    } catch (err) {
+      console.error('Failed to load templates:', err);
+    }
+  };
+
+  const loadDocuments = async (search?: string) => {
+    setDocumentsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      params.set('limit', '20');
+      
+      const response = await fetch(`/api/documents?${params}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSavedDocuments(data.documents);
+        setDocumentsTotal(data.total);
+      }
+    } catch (err) {
+      console.error('Failed to load documents:', err);
+    }
+    setDocumentsLoading(false);
+  };
+
+  const handleSearch = () => {
+    loadDocuments(searchQuery);
+  };
+
+  const handleSaveDocument = async () => {
+    if (!validatePatientData()) {
+      toast({ title: 'Missing Fields', description: 'Please fill required patient fields', variant: 'destructive' });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          template_id: selectedTemplate?.id,
+          template_type: selectedTemplate?.template_type || 'treatment_plan',
+          patient_name: patientData.patient_name,
+          client_id: patientData.client_id,
+          date_of_service: patientData.date_of_service,
+          patient_data: patientData,
+          clinical_inputs: clinicalInputs,
+          generated_content: generatedPlan,
+          status: 'draft',
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save document');
+      
+      toast({ title: 'Saved', description: 'Document saved to history' });
+      loadDocuments();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to save document', variant: 'destructive' });
+    }
+    setIsSaving(false);
+  };
+
+  const handleLoadDocument = (doc: SavedDocument) => {
+    setPatientData(doc.patient_data);
+    setClinicalInputs(doc.clinical_inputs || {
+      intake_form_data: '',
+      session_transcripts: '',
+      assessment_scores: '',
+      provider_notes: '',
+    });
+    setGeneratedPlan(doc.generated_content);
+    setActiveTab('generate');
+    toast({ title: 'Loaded', description: 'Document loaded successfully' });
+  };
+
+  const handleDeleteDocument = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    
+    try {
+      const response = await fetch(`/api/documents/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete');
+      toast({ title: 'Deleted', description: 'Document deleted' });
+      loadDocuments(searchQuery);
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete document', variant: 'destructive' });
+    }
   };
 
   const validatePatientData = (): boolean => {
@@ -100,6 +238,8 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
     try {
       const appSettings = await getAppSettings(supabase);
       
+      const customPrompt = selectedTemplate?.ai_prompt || appSettings?.treatment_plan_prompt;
+      
       const response = await fetch('/api/generate-treatment-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -110,12 +250,13 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
           aiAdjustment,
           appendMode,
           existingPlan: appendMode ? generatedPlan : null,
-          customPrompt: appSettings?.treatment_plan_prompt,
+          customPrompt,
+          templateType: selectedTemplate?.template_type || 'treatment_plan',
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate treatment plan');
+        throw new Error('Failed to generate document');
       }
 
       const plan = await response.json();
@@ -126,7 +267,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
         setGeneratedPlan(plan);
       }
 
-      toast({ title: 'Success', description: 'Treatment plan generated successfully' });
+      toast({ title: 'Success', description: 'Document generated successfully' });
     } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
@@ -216,6 +357,104 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
         </header>
 
         <main className="container mx-auto py-6 px-4">
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v === 'history') loadDocuments(); }}>
+            <TabsList className="mb-6">
+              <TabsTrigger value="generate" data-testid="tab-generate">
+                <Sparkles className="h-4 w-4 mr-2" /> Generate
+              </TabsTrigger>
+              <TabsTrigger value="history" data-testid="tab-history">
+                <History className="h-4 w-4 mr-2" /> History
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="history">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <History className="h-5 w-5" /> Document History
+                  </CardTitle>
+                  <CardDescription>Search and view previously generated documents</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-2 mb-4">
+                    <Input
+                      placeholder="Search by patient name..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                      data-testid="input-search-documents"
+                    />
+                    <Button onClick={handleSearch} variant="outline" data-testid="button-search">
+                      <Search className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  {documentsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                  ) : savedDocuments.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No documents found</p>
+                      <p className="text-sm">Generate and save a document to see it here</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {savedDocuments.map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50"
+                          data-testid={`document-item-${doc.id}`}
+                        >
+                          <div className="flex-1 cursor-pointer" onClick={() => handleLoadDocument(doc)}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{doc.patient_name}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {TEMPLATE_TYPE_LABELS[doc.template_type] || doc.template_type}
+                              </Badge>
+                              <Badge variant={doc.status === 'final' ? 'default' : 'secondary'} className="text-xs">
+                                {doc.status}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {doc.client_id && `ID: ${doc.client_id} • `}
+                              {new Date(doc.date_of_service).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleLoadDocument(doc)}
+                              data-testid={`button-load-${doc.id}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteDocument(doc.id)}
+                              className="text-red-600 hover:text-red-700"
+                              data-testid={`button-delete-doc-${doc.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {documentsTotal > savedDocuments.length && (
+                        <p className="text-center text-sm text-muted-foreground pt-2">
+                          Showing {savedDocuments.length} of {documentsTotal} documents
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="generate">
           <div className="grid lg:grid-cols-2 gap-6">
             <div className="space-y-6">
               <Card>
@@ -362,6 +601,36 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {templates.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Document Template</Label>
+                      <Select
+                        value={selectedTemplate?.id || ''}
+                        onValueChange={(v) => {
+                          const template = templates.find(t => t.id === v);
+                          setSelectedTemplate(template || null);
+                        }}
+                      >
+                        <SelectTrigger data-testid="select-template">
+                          <SelectValue placeholder="Select a template..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {templates.map((template) => (
+                            <SelectItem key={template.id} value={template.id}>
+                              {template.name}
+                              {template.is_default && ' (Default)'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedTemplate && (
+                        <p className="text-xs text-muted-foreground">
+                          Type: {TEMPLATE_TYPE_LABELS[selectedTemplate.template_type] || selectedTemplate.template_type}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  
                   <div className="space-y-2">
                     <Label>Detail Level</Label>
                     <Select value={detailLevel} onValueChange={(v: any) => setDetailLevel(v)}>
@@ -412,7 +681,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                     ) : (
                       <>
                         <Sparkles className="mr-2 h-4 w-4" />
-                        Generate Treatment Plan
+                        Generate Document
                       </>
                     )}
                   </Button>
@@ -431,8 +700,20 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                   </div>
                   {generatedPlan && (
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" data-testid="button-preview">
-                        <Eye className="h-4 w-4 mr-1" /> Preview
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSaveDocument}
+                        disabled={isSaving}
+                        data-testid="button-save-document"
+                      >
+                        {isSaving ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4 mr-1" /> Save
+                          </>
+                        )}
                       </Button>
                       <Button
                         size="sm"
@@ -505,6 +786,8 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
               </Card>
             </div>
           </div>
+            </TabsContent>
+          </Tabs>
         </main>
       </div>
     </>
