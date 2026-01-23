@@ -1,11 +1,10 @@
-import { GetServerSideProps } from 'next';
 import { createServerClient, getUserProfile } from '@/lib/supabase';
 
 export default function Home() {
   return null;
 }
 
-export const getServerSideProps: GetServerSideProps = async (ctx) => {
+export const getServerSideProps = async (ctx: any) => {
   const supabase = createServerClient(ctx);
   const { data: { session } } = await supabase.auth.getSession();
 

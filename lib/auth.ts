@@ -1,10 +1,8 @@
 import { createServerClient, getUserProfile, type Profile, type UserRole } from './supabase';
-import type { GetServerSidePropsContext } from 'next';
+import type { GetServerSidePropsContext, GetServerSidePropsResult } from 'next';
 
-interface AuthResult {
-  redirect?: { destination: string; permanent: boolean };
-  props?: { user: any; profile: Profile };
-}
+type AuthProps = { user: any; profile: Profile };
+type AuthResult = GetServerSidePropsResult<AuthProps>;
 
 export async function requireAuth(
   ctx: GetServerSidePropsContext,

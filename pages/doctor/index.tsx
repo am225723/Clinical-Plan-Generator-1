@@ -1,4 +1,3 @@
-import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
@@ -803,6 +802,6 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async (ctx) => {
+export const getServerSideProps = async (ctx: any) => {
   return requireDoctor(ctx);
 };

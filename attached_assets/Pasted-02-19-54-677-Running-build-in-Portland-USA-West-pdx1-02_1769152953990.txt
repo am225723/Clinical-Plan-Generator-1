@@ -1,0 +1,48 @@
+02:19:54.677 Running build in Portland, USA (West) – pdx1
+02:19:54.677 Build machine configuration: 4 cores, 8 GB
+02:19:54.754 Cloning github.com/am225723/Clinical-Plan-Generator-1 (Branch: main, Commit: 0b58b72)
+02:19:54.754 Previous build caches not available.
+02:20:12.873 Cloning completed: 18.119s
+02:20:13.522 Running "vercel build"
+02:20:14.334 Vercel CLI 50.4.10
+02:20:14.657 Installing dependencies...
+02:20:19.339 npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+02:20:19.392 npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+02:20:19.622 npm warn deprecated tar@6.2.1: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
+02:20:22.550 npm warn deprecated @supabase/auth-helpers-nextjs@0.15.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+02:20:22.565 npm warn deprecated @supabase/auth-helpers-react@0.15.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+02:20:32.624 
+02:20:32.624 added 679 packages in 18s
+02:20:32.625 
+02:20:32.625 89 packages are looking for funding
+02:20:32.625   run `npm fund` for details
+02:20:32.712 Detected Next.js version: 16.1.4
+02:20:32.712 Running "next build"
+02:20:33.230 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+02:20:33.230 This information is used to shape Next.js' roadmap and prioritize features.
+02:20:33.230 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+02:20:33.230 https://nextjs.org/telemetry
+02:20:33.230 
+02:20:33.244 ▲ Next.js 16.1.4 (Turbopack)
+02:20:33.244 
+02:20:33.269   Running TypeScript ...
+02:20:38.877 Failed to compile.
+02:20:38.878 
+02:20:38.878 ./pages/admin/index.tsx:311:14
+02:20:38.878 Type error: Type '(ctx: GetServerSidePropsContext<ParsedUrlQuery, PreviewData>) => Promise<AuthResult>' is not assignable to type 'GetServerSideProps'.
+02:20:38.878   Type 'Promise<AuthResult>' is not assignable to type 'Promise<GetServerSidePropsResult<{ [key: string]: any; }>>'.
+02:20:38.878     Type 'AuthResult' is not assignable to type 'GetServerSidePropsResult<{ [key: string]: any; }>'.
+02:20:38.879       Type 'AuthResult' is not assignable to type '{ props: { [key: string]: any; } | Promise<{ [key: string]: any; }>; }'.
+02:20:38.879         Types of property 'props' are incompatible.
+02:20:38.879           Type '{ user: any; profile: Profile; } | undefined' is not assignable to type '{ [key: string]: any; } | Promise<{ [key: string]: any; }>'.
+02:20:38.879             Type 'undefined' is not assignable to type '{ [key: string]: any; } | Promise<{ [key: string]: any; }>'.
+02:20:38.879 
+02:20:38.879 [0m [90m 309 |[39m }
+02:20:38.879  [90m 310 |[39m
+02:20:38.879 [31m[1m>[22m[39m[90m 311 |[39m [36mexport[39m [36mconst[39m getServerSideProps[33m:[39m [33mGetServerSideProps[39m [33m=[39m [36masync[39m (ctx) [33m=>[39m {
+02:20:38.879  [90m     |[39m              [31m[1m^[22m[39m
+02:20:38.879  [90m 312 |[39m   [36mreturn[39m requireAdmin(ctx)[33m;[39m
+02:20:38.879  [90m 313 |[39m }[33m;[39m
+02:20:38.879  [90m 314 |[39m[0m
+02:20:38.910 Next.js build worker exited with code: 1 and signal: null
+02:20:38.922 Error: Command "next build" exited with 1
