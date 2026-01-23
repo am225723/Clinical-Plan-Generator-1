@@ -184,6 +184,86 @@ CREATE POLICY "Users can delete own logos" ON storage.objects
     auth.uid()::text = (storage.foldername(name))[1]
   );
 
+-- 7. DOCUMENT_TEMPLATES TABLE
+-- =====================================================
+CREATE TABLE IF NOT EXISTS public.document_templates (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  doctor_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  name text NOT NULL,
+  template_type text NOT NULL CHECK (template_type IN ('treatment_plan', 'darp_note', 'psych_note', 'progress_note', 'discharge_summary', 'custom')),
+  ai_prompt text NOT NULL,
+  pdf_config jsonb DEFAULT '{}'::jsonb,
+  is_default boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE public.document_templates ENABLE ROW LEVEL SECURITY;
+
+-- Doctors can read/write only their own templates
+CREATE POLICY "Doctors can read own templates" ON public.document_templates
+  FOR SELECT USING (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can insert own templates" ON public.document_templates
+  FOR INSERT WITH CHECK (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can update own templates" ON public.document_templates
+  FOR UPDATE USING (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can delete own templates" ON public.document_templates
+  FOR DELETE USING (auth.uid() = doctor_id);
+
+-- Service role full access
+CREATE POLICY "Service role full access on templates" ON public.document_templates
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- 8. SAVED_DOCUMENTS TABLE (Document History)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS public.saved_documents (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  doctor_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  template_id uuid REFERENCES public.document_templates(id) ON DELETE SET NULL,
+  template_type text NOT NULL,
+  patient_name text NOT NULL,
+  client_id text,
+  date_of_service date NOT NULL,
+  patient_data jsonb NOT NULL,
+  clinical_inputs jsonb,
+  generated_content jsonb NOT NULL,
+  pdf_html text,
+  status text DEFAULT 'draft' CHECK (status IN ('draft', 'final', 'signed')),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE public.saved_documents ENABLE ROW LEVEL SECURITY;
+
+-- Doctors can only access their own documents
+CREATE POLICY "Doctors can read own documents" ON public.saved_documents
+  FOR SELECT USING (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can insert own documents" ON public.saved_documents
+  FOR INSERT WITH CHECK (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can update own documents" ON public.saved_documents
+  FOR UPDATE USING (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can delete own documents" ON public.saved_documents
+  FOR DELETE USING (auth.uid() = doctor_id);
+
+-- Service role full access
+CREATE POLICY "Service role full access on documents" ON public.saved_documents
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- Index for fast patient search
+CREATE INDEX IF NOT EXISTS idx_saved_documents_patient_search 
+  ON public.saved_documents USING gin (to_tsvector('english', patient_name));
+
+CREATE INDEX IF NOT EXISTS idx_saved_documents_doctor_date 
+  ON public.saved_documents (doctor_id, date_of_service DESC);
+
 -- =====================================================
 -- SEED DATA: Test Accounts
 -- =====================================================
