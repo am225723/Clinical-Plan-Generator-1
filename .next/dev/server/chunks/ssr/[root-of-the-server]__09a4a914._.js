@@ -19,7 +19,7 @@ var __TURBOPACK__imported__module__$5b$externals$5d2f$cookie__$5b$external$5d$__
 ;
 ;
 const getSupabaseUrl = ()=>{
-    const url = ("TURBOPACK compile-time value", "https://hqlqtnjnyhafdnfetjac.supabase.co") || process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+    const url = ("TURBOPACK compile-time value", "hqlqtnjnyhafdnfetjac.supabase.co/") || process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
     if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
     ;
     return url;

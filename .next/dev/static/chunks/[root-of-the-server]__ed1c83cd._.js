@@ -891,7 +891,7 @@ function useSupabase() {
     return context;
 }
 _s(useSupabase, "b9L3QQ+jgeyIrH0NfHrJ8nn7VMU=");
-const getSupabaseUrl = ()=>("TURBOPACK compile-time value", "https://hqlqtnjnyhafdnfetjac.supabase.co") || __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$client$5d$__$28$ecmascript$29$__["default"].env.VITE_SUPABASE_URL || '';
+const getSupabaseUrl = ()=>("TURBOPACK compile-time value", "hqlqtnjnyhafdnfetjac.supabase.co/") || __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$client$5d$__$28$ecmascript$29$__["default"].env.VITE_SUPABASE_URL || '';
 const getSupabaseAnonKey = ()=>("TURBOPACK compile-time value", "sb_publishable_WpJVJ9yZADuI2bx9CTquWQ_Wyd6dZjM") || __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$client$5d$__$28$ecmascript$29$__["default"].env.VITE_SUPABASE_ANON_KEY || '';
 function App({ Component, pageProps }) {
     _s1();
