@@ -33,6 +33,7 @@
     "node_modules",
     "client",
     "server",
-    ".next"
+    ".next",
+    "supabase"
   ]
 }

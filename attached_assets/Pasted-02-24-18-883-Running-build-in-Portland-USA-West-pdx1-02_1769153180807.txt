@@ -1,0 +1,40 @@
+02:24:18.883 Running build in Portland, USA (West) – pdx1
+02:24:18.883 Build machine configuration: 4 cores, 8 GB
+02:24:18.971 Cloning github.com/am225723/Clinical-Plan-Generator-1 (Branch: main, Commit: 6c67849)
+02:24:18.972 Previous build caches not available.
+02:24:35.972 Cloning completed: 17.001s
+02:24:36.407 Running "vercel build"
+02:24:37.138 Vercel CLI 50.4.10
+02:24:37.379 Installing dependencies...
+02:24:41.885 npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+02:24:41.940 npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+02:24:42.445 npm warn deprecated tar@6.2.1: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
+02:24:44.843 npm warn deprecated @supabase/auth-helpers-nextjs@0.15.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+02:24:44.846 npm warn deprecated @supabase/auth-helpers-react@0.15.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+02:24:54.571 
+02:24:54.571 added 679 packages in 17s
+02:24:54.571 
+02:24:54.572 89 packages are looking for funding
+02:24:54.572   run `npm fund` for details
+02:24:54.654 Detected Next.js version: 16.1.4
+02:24:54.654 Running "next build"
+02:24:55.154 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+02:24:55.154 This information is used to shape Next.js' roadmap and prioritize features.
+02:24:55.155 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+02:24:55.155 https://nextjs.org/telemetry
+02:24:55.155 
+02:24:55.168 ▲ Next.js 16.1.4 (Turbopack)
+02:24:55.168 
+02:24:55.192   Running TypeScript ...
+02:25:00.570 Failed to compile.
+02:25:00.571 
+02:25:00.571 ./supabase/functions/admin-create-user/index.ts:1:23
+02:25:00.571 Type error: Cannot find module 'https://deno.land/std@0.168.0/http/server.ts' or its corresponding type declarations.
+02:25:00.571 
+02:25:00.571 [0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { serve } [36mfrom[39m [32m'https://deno.land/std@0.168.0/http/server.ts'[39m
+02:25:00.571  [90m   |[39m                       [31m[1m^[22m[39m
+02:25:00.571  [90m 2 |[39m [36mimport[39m { createClient } [36mfrom[39m [32m'https://esm.sh/@supabase/supabase-js@2'[39m
+02:25:00.572  [90m 3 |[39m
+02:25:00.572  [90m 4 |[39m [36mconst[39m corsHeaders [33m=[39m {[0m
+02:25:00.598 Next.js build worker exited with code: 1 and signal: null
+02:25:00.609 Error: Command "next build" exited with 1
