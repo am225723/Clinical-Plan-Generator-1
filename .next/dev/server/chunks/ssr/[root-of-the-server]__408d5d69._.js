@@ -417,7 +417,7 @@ function useSupabase() {
     }
     return context;
 }
-const getSupabaseUrl = ()=>("TURBOPACK compile-time value", "hqlqtnjnyhafdnfetjac.supabase.co/") || process.env.VITE_SUPABASE_URL || '';
+const getSupabaseUrl = ()=>("TURBOPACK compile-time value", "https://hqlqtnjnyhafdnfetjac.supabase.co") || process.env.VITE_SUPABASE_URL || '';
 const getSupabaseAnonKey = ()=>("TURBOPACK compile-time value", "sb_publishable_WpJVJ9yZADuI2bx9CTquWQ_Wyd6dZjM") || process.env.VITE_SUPABASE_ANON_KEY || '';
 function App({ Component, pageProps }) {
     const [supabase] = (0, __TURBOPACK__imported__module__$5b$externals$5d2f$react__$5b$external$5d$__$28$react$2c$__cjs$29$__["useState"])(()=>(0, __TURBOPACK__imported__module__$5b$externals$5d2f40$supabase$2f$ssr__$5b$external$5d$__$2840$supabase$2f$ssr$2c$__cjs$2c$__$5b$project$5d2f$node_modules$2f40$supabase$2f$ssr$29$__["createBrowserClient"])(getSupabaseUrl(), getSupabaseAnonKey()));
