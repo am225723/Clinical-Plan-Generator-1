@@ -137,7 +137,23 @@ IMPORTANT: Return ONLY valid JSON, no markdown code blocks or extra text.
     }
     jsonContent = jsonContent.trim();
 
-    const parsed = JSON.parse(jsonContent);
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonContent);
+    } catch (parseError) {
+      console.error('Failed to parse AI response as JSON:', jsonContent);
+      const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          parsed = JSON.parse(jsonMatch[0]);
+        } catch {
+          throw new Error('AI response was not valid JSON. Please try again.');
+        }
+      } else {
+        throw new Error('AI response was not valid JSON. Please try again.');
+      }
+    }
+    
     res.json(parsed);
 
   } catch (error) {

@@ -694,7 +694,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" /> Treatment Plan
+                      <FileText className="h-5 w-5" /> {selectedTemplate ? TEMPLATE_TYPE_LABELS[selectedTemplate.template_type] || 'Document' : 'Document'}
                     </CardTitle>
                     <CardDescription>Generated clinical documentation</CardDescription>
                   </div>
@@ -736,49 +736,58 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                   {generatedPlan ? (
                     <div className="prose prose-sm max-w-none">
                       <div className="space-y-4 text-sm">
-                        {generatedPlan.chief_complaint && (
-                          <div>
-                            <h4 className="font-semibold">Chief Complaint</h4>
-                            <p>{generatedPlan.chief_complaint}</p>
-                          </div>
-                        )}
-                        {generatedPlan.hpi && (
-                          <div>
-                            <h4 className="font-semibold">History of Present Illness</h4>
-                            <p>{generatedPlan.hpi}</p>
-                          </div>
-                        )}
-                        {generatedPlan.diagnosis && (
-                          <div>
-                            <h4 className="font-semibold">Diagnosis</h4>
-                            <ul className="list-disc pl-5">
-                              {generatedPlan.diagnosis.map((d: any, i: number) => (
-                                <li key={i}>{d.code} - {d.name}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {generatedPlan.treatment_goals && (
-                          <div>
-                            <h4 className="font-semibold">Treatment Goals</h4>
-                            {generatedPlan.treatment_goals.map((g: any, i: number) => (
-                              <div key={i} className="mb-2">
-                                <p className="font-medium">{g.goal}</p>
+                        {Object.entries(generatedPlan).map(([key, value]) => {
+                          if (!value) return null;
+                          const title = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                          
+                          if (Array.isArray(value)) {
+                            return (
+                              <div key={key}>
+                                <h4 className="font-semibold">{title}</h4>
                                 <ul className="list-disc pl-5">
-                                  {g.objectives?.map((o: string, j: number) => (
-                                    <li key={j}>{o}</li>
+                                  {value.map((item: any, i: number) => (
+                                    <li key={i}>
+                                      {typeof item === 'object' 
+                                        ? item.code && item.name 
+                                          ? `${item.code} - ${item.name}`
+                                          : item.goal 
+                                            ? <><span className="font-medium">{item.goal}</span>{item.objectives && <ul className="list-disc pl-5 mt-1">{item.objectives.map((o: string, j: number) => <li key={j}>{o}</li>)}</ul>}</>
+                                            : JSON.stringify(item)
+                                        : String(item)
+                                      }
+                                    </li>
                                   ))}
                                 </ul>
                               </div>
-                            ))}
-                          </div>
-                        )}
+                            );
+                          }
+                          
+                          if (typeof value === 'object') {
+                            return (
+                              <div key={key}>
+                                <h4 className="font-semibold">{title}</h4>
+                                <div className="pl-4 border-l-2 border-slate-200">
+                                  {Object.entries(value as Record<string, any>).map(([k, v]) => (
+                                    <p key={k}><span className="font-medium">{k.replace(/_/g, ' ')}:</span> {String(v)}</p>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }
+                          
+                          return (
+                            <div key={key}>
+                              <h4 className="font-semibold">{title}</h4>
+                              <p>{String(value)}</p>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                       <FileText className="h-12 w-12 mb-4 opacity-50" />
-                      <p>No treatment plan generated yet</p>
+                      <p>No document generated yet</p>
                       <p className="text-sm">Enter clinical inputs and click Generate</p>
                     </div>
                   )}
