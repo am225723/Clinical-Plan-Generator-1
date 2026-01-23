@@ -2,9 +2,9 @@
 
 ## Overview
 
-A clinical treatment plan generator that converts raw clinical inputs (intake forms, session transcripts, assessment scores, provider notes) into structured, print-ready mental health treatment plans. The application uses AI (OpenAI) to generate comprehensive psychiatric documentation including diagnoses with ICD-10/DSM-5-TR codes, SMART treatment goals, and medical decision-making documentation.
+A clinical treatment plan generator that converts raw clinical inputs (intake forms, session transcripts, assessment scores, provider notes) into structured, print-ready mental health treatment plans. The application uses Perplexity AI to generate comprehensive psychiatric documentation including diagnoses with ICD-10/DSM-5-TR codes, SMART treatment goals, and medical decision-making documentation.
 
-**Current Status**: Fully migrated to Next.js Pages Router with Supabase Auth, role-based access control (admin/doctor), and secure API routes.
+**Current Status**: Next.js Pages Router with Supabase Auth, role-based access control (admin/doctor), secure API routes, document templates with custom AI prompts per template type, and document history with search.
 
 ## User Preferences
 
@@ -52,9 +52,10 @@ Preferred communication style: Simple, everyday language.
 ## External Dependencies
 
 ### AI Services
-- **OpenAI API**: Primary AI provider for treatment plan generation
-  - Configured via `AI_INTEGRATIONS_OPENAI_API_KEY` and `AI_INTEGRATIONS_OPENAI_BASE_URL` environment variables
-  - Used for structured clinical document generation with JSON output format
+- **Perplexity AI**: Primary AI provider for document generation
+  - Configured via `PERPLEXITY_API_KEY` environment variable
+  - Uses `llama-3.1-sonar-large-128k-online` model for structured clinical document generation
+  - Each document template type (Treatment Plan, DARP Note, Psych Note, etc.) has its own customized AI prompt
 
 ### Database
 - **PostgreSQL**: Primary database
@@ -77,13 +78,17 @@ Preferred communication style: Simple, everyday language.
 - `@supabase/ssr`: Supabase SSR support
 - `@supabase/supabase-js`: Supabase client
 - `drizzle-orm` / `drizzle-kit`: Database ORM and migrations
-- `openai`: OpenAI API client
+- Native fetch API for Perplexity AI calls
 - `tailwindcss` / `@tailwindcss/postcss`: Styling
 - `zod`: Schema validation
 
 ## Environment Variables
 - `VITE_SUPABASE_URL`: Supabase project URL (secret)
 - `VITE_SUPABASE_ANON_KEY`: Supabase anonymous key (secret)
-- `AI_INTEGRATIONS_OPENAI_API_KEY`: OpenAI API key (via Replit integrations)
-- `AI_INTEGRATIONS_OPENAI_BASE_URL`: OpenAI base URL (via Replit integrations)
+- `PERPLEXITY_API_KEY`: Perplexity AI API key (secret)
 - `DATABASE_URL`: PostgreSQL connection string
+
+## New Features (In Progress)
+- **Document Templates**: Each template type (Treatment Plan, DARP Note, Psych Note, Progress Note, Discharge Summary) has its own customized AI prompt
+- **Document History**: Saved documents with full-text search by patient name
+- **Template Management**: Doctors can create and customize templates with specific AI prompts per document type

@@ -1,10 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
 
 const DETAIL_LEVEL_INSTRUCTIONS = {
   brief: 'Keep the response concise and focus only on essential elements.',
@@ -92,23 +88,56 @@ OUTPUT JSON FORMAT:
   "informed_consent": "string",
   "labs": "string"
 }
+
+IMPORTANT: Return ONLY valid JSON, no markdown code blocks or extra text.
 `;
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: 'You are a helpful assistant that outputs JSON.' },
-        { role: 'user', content: prompt }
-      ],
-      response_format: { type: 'json_object' }
+    const perplexityApiKey = process.env.PERPLEXITY_API_KEY;
+    if (!perplexityApiKey) {
+      return res.status(500).json({ error: 'Perplexity API key not configured' });
+    }
+
+    const response = await fetch(PERPLEXITY_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${perplexityApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-sonar-large-128k-online',
+        messages: [
+          { role: 'system', content: 'You are an expert clinical psychiatrist. Always output valid JSON only, with no markdown formatting or code blocks.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.2,
+        max_tokens: 4096,
+        stream: false,
+      }),
     });
 
-    const content = response.choices[0]?.message?.content;
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Perplexity API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
     if (!content) {
       throw new Error('No response from AI');
     }
 
-    const parsed = JSON.parse(content);
+    let jsonContent = content.trim();
+    if (jsonContent.startsWith('```json')) {
+      jsonContent = jsonContent.slice(7);
+    } else if (jsonContent.startsWith('```')) {
+      jsonContent = jsonContent.slice(3);
+    }
+    if (jsonContent.endsWith('```')) {
+      jsonContent = jsonContent.slice(0, -3);
+    }
+    jsonContent = jsonContent.trim();
+
+    const parsed = JSON.parse(jsonContent);
     res.json(parsed);
 
   } catch (error) {
