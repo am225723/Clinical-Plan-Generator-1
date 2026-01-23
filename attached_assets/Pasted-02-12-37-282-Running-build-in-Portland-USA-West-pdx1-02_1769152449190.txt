@@ -1,0 +1,42 @@
+02:12:37.282 Running build in Portland, USA (West) – pdx1
+02:12:37.283 Build machine configuration: 4 cores, 8 GB
+02:12:37.371 Cloning github.com/am225723/Clinical-Plan-Generator-1 (Branch: main, Commit: 564d85f)
+02:12:37.372 Previous build caches not available.
+02:12:55.207 Cloning completed: 17.834s
+02:12:55.629 Running "vercel build"
+02:12:56.416 Vercel CLI 50.4.10
+02:12:56.663 Installing dependencies...
+02:13:01.155 npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+02:13:01.216 npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+02:13:01.306 npm warn deprecated tar@6.2.1: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
+02:13:04.352 npm warn deprecated @supabase/auth-helpers-nextjs@0.15.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+02:13:04.356 npm warn deprecated @supabase/auth-helpers-react@0.15.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+02:13:14.787 
+02:13:14.787 added 679 packages in 18s
+02:13:14.788 
+02:13:14.788 89 packages are looking for funding
+02:13:14.788   run `npm fund` for details
+02:13:14.864 Detected Next.js version: 16.1.4
+02:13:14.865 Running "next build"
+02:13:16.100 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+02:13:16.101 This information is used to shape Next.js' roadmap and prioritize features.
+02:13:16.101 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+02:13:16.101 https://nextjs.org/telemetry
+02:13:16.101 
+02:13:16.114 ▲ Next.js 16.1.4 (Turbopack)
+02:13:16.114 
+02:13:16.137   Running TypeScript ...
+02:13:21.549 Failed to compile.
+02:13:21.549 
+02:13:21.549 ./components/ui/sidebar.tsx:8:29
+02:13:21.549 Type error: Cannot find module '@/hooks/use-mobile' or its corresponding type declarations.
+02:13:21.549 
+02:13:21.549 [0m [90m  6 |[39m [36mimport[39m { [33mPanelLeftIcon[39m } [36mfrom[39m [32m"lucide-react"[39m
+02:13:21.550  [90m  7 |[39m
+02:13:21.550 [31m[1m>[22m[39m[90m  8 |[39m [36mimport[39m { useIsMobile } [36mfrom[39m [32m"@/hooks/use-mobile"[39m
+02:13:21.550  [90m    |[39m                             [31m[1m^[22m[39m
+02:13:21.550  [90m  9 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m
+02:13:21.550  [90m 10 |[39m [36mimport[39m { [33mButton[39m } [36mfrom[39m [32m"@/components/ui/button"[39m
+02:13:21.550  [90m 11 |[39m [36mimport[39m { [33mInput[39m } [36mfrom[39m [32m"@/components/ui/input"[39m[0m
+02:13:21.579 Next.js build worker exited with code: 1 and signal: null
+02:13:21.592 Error: Command "next build" exited with 1
