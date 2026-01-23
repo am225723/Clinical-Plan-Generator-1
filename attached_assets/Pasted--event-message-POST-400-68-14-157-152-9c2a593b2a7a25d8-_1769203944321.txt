@@ -1,0 +1,201 @@
+{
+  "event_message": "POST | 400 | 68.14.157.152 | 9c2a593b2a7a25d8 | https://hqlqtnjnyhafdnfetjac.supabase.co/auth/v1/token?grant_type=password | Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+  "id": "d863db2f-bcee-4923-b2be-2b9df5d3234d",
+  "metadata": [
+    {
+      "load_balancer_experimental_routing": null,
+      "load_balancer_geo_aware_info": [],
+      "load_balancer_redirect_identifier": null,
+      "logflare_worker": [
+        {
+          "worker_id": "R1X1WQ"
+        }
+      ],
+      "request": [
+        {
+          "cf": [
+            {
+              "asOrganization": "Cox Communications Inc.",
+              "asn": 22773,
+              "botManagement": [
+                {
+                  "corporateProxy": false,
+                  "detectionIds": [],
+                  "ja3Hash": "f04a334757ff8e53103e945b51022b13",
+                  "ja4": "q13d0311h3_55b375c5d22e_653d80c3fe9d",
+                  "ja4Signals": [
+                    {
+                      "browser_ratio_1h": 0.91723001003265,
+                      "cache_ratio_1h": 0.57096976041794,
+                      "h2h3_ratio_1h": 1,
+                      "heuristic_ratio_1h": 0.0038663425948471,
+                      "ips_quantile_1h": 0.99999642372131,
+                      "ips_rank_1h": 3,
+                      "paths_rank_1h": 3,
+                      "reqs_quantile_1h": 0.99999523162842,
+                      "reqs_rank_1h": 4,
+                      "uas_rank_1h": 4
+                    }
+                  ],
+                  "jsDetection": [
+                    {
+                      "passed": false
+                    }
+                  ],
+                  "score": 99,
+                  "staticResource": false,
+                  "verifiedBot": false
+                }
+              ],
+              "city": "Providence",
+              "clientAcceptEncoding": "gzip, deflate, br",
+              "clientTcpRtt": null,
+              "clientTrustScore": 99,
+              "colo": "EWR",
+              "continent": "NA",
+              "country": "US",
+              "edgeRequestKeepAliveStatus": 1,
+              "httpProtocol": "HTTP/3",
+              "isEUCountry": null,
+              "latitude": "41.82399",
+              "longitude": "-71.41283",
+              "metroCode": "521",
+              "postalCode": "02901",
+              "region": "Rhode Island",
+              "regionCode": "RI",
+              "requestPriority": null,
+              "timezone": "America/New_York",
+              "tlsCipher": "AEAD-AES128-GCM-SHA256",
+              "tlsClientAuth": [
+                {
+                  "certPresented": "0",
+                  "certRevoked": "0",
+                  "certVerified": "NONE"
+                }
+              ],
+              "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+              "tlsClientExtensionsSha1": "9n6IViQNvuo84KF4RSL39b3ztdQ=",
+              "tlsClientExtensionsSha1Le": "x3b361d6mMR7+PL/QKHPoxVQ6sg=",
+              "tlsClientHelloLength": "1714",
+              "tlsClientRandom": "rufEY55CpKYvbHhQS0YzRXL/p8Q39VtM+XJKdTJu/6M=",
+              "tlsExportedAuthenticator": [
+                {
+                  "clientFinished": "a5dc5ed1ab70f227850e199abf7330c918197672a1e2d36eb7ba5d6534fa4c1f",
+                  "clientHandshake": "afec2d1ac590dcc187e6e5828c80660b235bcfbf36118d8487206735e4a1b04b",
+                  "serverFinished": "1414543152e4d1734eeffd595ac432a7ea3c13a2c8ec4ab66e6adffcd1fd6a66",
+                  "serverHandshake": "baca360aa73c8e9ec0e75666593c632c155d304ab0fddf93be667cf3eb05ad8e"
+                }
+              ],
+              "tlsVersion": "TLSv1.3",
+              "verifiedBotCategory": null
+            }
+          ],
+          "headers": [
+            {
+              "accept": "*/*",
+              "cf_cache_status": null,
+              "cf_connecting_ip": "68.14.157.152",
+              "cf_ipcountry": "US",
+              "cf_ray": "9c2a593b2a7a25d8",
+              "content_length": "84",
+              "content_location": null,
+              "content_range": null,
+              "content_type": "application/json;charset=UTF-8",
+              "date": null,
+              "host": "hqlqtnjnyhafdnfetjac.supabase.co",
+              "prefer": null,
+              "range": null,
+              "referer": "https://goldstandard-h13gwkybe-aleix.vercel.app/",
+              "sb_gateway_mode": null,
+              "sb_gateway_version": null,
+              "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+              "x_client_info": "supabase-ssr/0.8.0 createBrowserClient",
+              "x_forwarded_for": null,
+              "x_forwarded_host": null,
+              "x_forwarded_proto": "https",
+              "x_forwarded_user_agent": null,
+              "x_kong_proxy_latency": null,
+              "x_kong_upstream_latency": null,
+              "x_real_ip": "68.14.157.152"
+            }
+          ],
+          "host": "hqlqtnjnyhafdnfetjac.supabase.co",
+          "method": "POST",
+          "path": "/auth/v1/token",
+          "port": null,
+          "protocol": "https:",
+          "sb": [
+            {
+              "apikey": [],
+              "auth_user": null,
+              "jwt": [
+                {
+                  "apikey": [
+                    {
+                      "invalid": null,
+                      "payload": [
+                        {
+                          "algorithm": "HS256",
+                          "expires_at": 2084330772,
+                          "issuer": "supabase",
+                          "role": "anon",
+                          "signature_prefix": "omnl1_",
+                          "subject": null
+                        }
+                      ]
+                    }
+                  ],
+                  "authorization": [
+                    {
+                      "invalid": null,
+                      "payload": [
+                        {
+                          "algorithm": "HS256",
+                          "expires_at": 2084330772,
+                          "issuer": "supabase",
+                          "key_id": null,
+                          "role": "anon",
+                          "session_id": null,
+                          "signature_prefix": "omnl1_",
+                          "subject": null
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "search": "?grant_type=password",
+          "url": "https://hqlqtnjnyhafdnfetjac.supabase.co/auth/v1/token?grant_type=password"
+        }
+      ],
+      "response": [
+        {
+          "headers": [
+            {
+              "cf_cache_status": "DYNAMIC",
+              "cf_ray": "9c2a593b42a225d8-EWR",
+              "content_length": "68",
+              "content_location": null,
+              "content_range": null,
+              "content_type": "application/json",
+              "date": "Fri, 23 Jan 2026 21:22:48 GMT",
+              "proxy_status": null,
+              "sb_gateway_mode": null,
+              "sb_gateway_version": "1",
+              "sb_request_id": "019becbd-0106-72f5-9fcf-767d53d25439",
+              "transfer_encoding": null,
+              "x_kong_proxy_latency": null,
+              "x_kong_upstream_latency": null,
+              "x_sb_error_code": "invalid_credentials"
+            }
+          ],
+          "origin_time": 94,
+          "status_code": 400
+        }
+      ]
+    }
+  ],
+  "timestamp": 1769203368198000
+}
