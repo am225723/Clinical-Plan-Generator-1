@@ -2,39 +2,67 @@
 @import "tw-animate-css";
 
 @theme inline {
-  --color-background: hsl(210 20% 98%);
-  --color-foreground: hsl(222 47% 11%);
+  --color-background: #f6f7f8;
+  --color-foreground: #111827;
   
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(222 47% 11%);
+  --color-card: #ffffff;
+  --color-card-foreground: #111827;
   
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(222 47% 11%);
+  --color-popover: #ffffff;
+  --color-popover-foreground: #111827;
   
-  --color-primary: hsl(221 83% 53%);
-  --color-primary-foreground: hsl(210 40% 98%);
+  --color-primary: #137fec;
+  --color-primary-foreground: #ffffff;
   
-  --color-secondary: hsl(210 40% 96.1%);
-  --color-secondary-foreground: hsl(222 47% 11.2%);
+  --color-secondary: #fb923c;
+  --color-secondary-foreground: #111827;
   
-  --color-muted: hsl(210 40% 96.1%);
-  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
   
-  --color-accent: hsl(210 40% 96.1%);
-  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
+  --color-accent: #c084fc;
+  --color-accent-foreground: #111827;
   
-  --color-destructive: hsl(0 84.2% 60.2%);
-  --color-destructive-foreground: hsl(210 40% 98%);
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
   
-  --color-border: hsl(214.3 31.8% 91.4%);
-  --color-input: hsl(214.3 31.8% 91.4%);
-  --color-ring: hsl(221.2 83.2% 53.3%);
+  --color-border: #e5e7eb;
+  --color-input: #e5e7eb;
+  --color-ring: #137fec;
   
-  --radius: 0.5rem;
+  --radius: 1rem;
   
+  --font-display: 'Inter', sans-serif;
+  --font-sans: 'Inter', sans-serif;
   --font-serif: 'Merriweather', serif;
-  --font-sans: 'Open Sans', sans-serif;
   --font-signature: 'Dancing Script', cursive;
+
+  /* Custom colors from Stitch-Generator */
+  --color-primary-dark: #14B8A6;
+  --color-background-dark: #101922;
+  --color-surface-dark: #151e32;
+  --color-surface-light: #FFFFFF;
+  --color-soft-gray: #E8EAED;
+  --color-obsidian: #09090b;
+
+  /* Shadows */
+  --shadow-glow: 0 0 20px -5px rgba(45, 212, 191, 0.4);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --shadow-nav-glow: 0 -10px 40px -10px rgba(45, 212, 191, 0.1);
+
+  /* Animations */
+  --animate-gradient-xy: gradient-xy 3s ease infinite;
+
+  @keyframes gradient-xy {
+    0%, 100% {
+      background-size: 200% 200%;
+      background-position: left center;
+    }
+    50% {
+      background-size: 200% 200%;
+      background-position: right center;
+    }
+  }
 }
 
 @layer base {
@@ -42,11 +70,67 @@
     @apply border-border;
   }
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-background text-foreground transition-colors duration-300;
+  }
+  /* Dark mode overrides */
+  :root.dark {
+    --color-background: #101922;
+    --color-foreground: #ededed;
+    --color-card: #0f1923;
+    --color-card-foreground: #ededed;
+    --color-popover: #0f1923;
+    --color-popover-foreground: #ededed;
+    --color-border: #27272a;
+    --color-input: #27272a;
+    --color-muted: #1e293b;
+    --color-muted-foreground: #94a3b8;
   }
 }
 
 @layer utilities {
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.04);
+  }
+  .dark .glass-panel {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+
+  .glass-nav {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.03);
+  }
+  .dark .glass-nav {
+    background: rgba(11, 18, 21, 0.85);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-button {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .btn-gradient {
+    background-image: linear-gradient(135deg, #13ecc8 0%, #0d9488 100%);
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   .print-only {
     display: none;
   }
@@ -121,7 +205,7 @@
   }
 }
 
-/* Custom Scrollbar for better UX */
+/* Custom Scrollbar for better UX (when not hidden) */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
