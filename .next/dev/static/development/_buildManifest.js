@@ -5,6 +5,12 @@ self.__BUILD_MANIFEST = {
   "/doctor": [
     "static/chunks/pages/doctor.js"
   ],
+  "/login": [
+    "static/chunks/pages/login.js"
+  ],
+  "/settings": [
+    "static/chunks/pages/settings.js"
+  ],
   "__rewrites": {
     "afterFiles": [],
     "beforeFiles": [],
