@@ -1,0 +1,130 @@
+forward-logs-shared.ts:95 [HMR] Invalid message: {"type":"isrManifest","data":{"/admin":false,"/":false,"/login":true}}
+TypeError: Cannot read properties of undefined (reading 'components')
+    at handleStaticIndicator (hot-reloader-pages.ts:257:42)
+    at processMessage (hot-reloader-pages.ts:279:7)
+    at hot-reloader-pages.ts:100:7
+    at WebSocket.handleMessage (websocket.ts:68:9)
+
+forward-logs-shared.ts:95 [Fast Refresh] rebuilding
+forward-logs-shared.ts:95 [Fast Refresh] done in 320ms
+3
+heidi.js:241 processing removed
+forward-logs-shared.ts:95 [Fast Refresh] rebuilding
+forward-logs-shared.ts:95 [Fast Refresh] done in 793ms
+forward-logs-shared.ts:95 [Fast Refresh] rebuilding
+forward-logs-shared.ts:95 [Fast Refresh] done in 153ms
+forward-logs-shared.ts:95 [Fast Refresh] rebuilding
+heidi.js:241 processing removed
+forward-logs-shared.ts:95 [Fast Refresh] done in 915ms
+heidi.js:241 processing removed
+settings.tsx:174 
+ GET https://e3370ef6-486e-4549-b8a8-747bfd046c6d-00-xt8b01lf1gfx.picard.replit.dev/api/templates 500 (Internal Server Error)
+loadTemplates	@	settings.tsx:174
+SettingsPage.useEffect	@	settings.tsx:147
+<SettingsPage>		
+App	@	_app.tsx:51
+heidi.js:241 processing removed
+settings.tsx:174 
+ GET https://e3370ef6-486e-4549-b8a8-747bfd046c6d-00-xt8b01lf1gfx.picard.replit.dev/api/templates 500 (Internal Server Error)
+loadTemplates	@	settings.tsx:174
+SettingsPage.useEffect	@	settings.tsx:147
+<SettingsPage>		
+App	@	_app.tsx:51
+4
+heidi.js:241 processing removed
+login.tsx:34 Attempting login for: drz@drzelisko.com
+login.tsx:114 Error processing removed node: TypeError: c.hasAttribute is not a function
+    at heidi.js:241:11461
+    at NodeList.forEach (<anonymous>)
+    at Gy.MutationObserver.observe.subtree (heidi.js:241:11440)
+<LoaderCircle>		
+LoginPage	@	login.tsx:114
+<LoginPage>		
+App	@	_app.tsx:51
+heidi.js:241 processing removed
+login.tsx:40 Login result: 
+{data: {…}, error: null}
+login.tsx:48 Login successful, redirecting...
+heidi.js:241 processing removed
+forward-logs-shared.ts:95 [Fast Refresh] rebuilding
+heidi.js:241 processing removed
+forward-logs-shared.ts:95 [Fast Refresh] done in 231ms
+forward-logs-shared.ts:95 [Fast Refresh] rebuilding
+forward-logs-shared.ts:95 [Fast Refresh] done in 326ms
+heidi.js:241 processing removed
+fetch.ts:7 
+ GET https://hqlqtnjnyhafdnfetjac.supabase.co/rest/v1/doctor_document_settings?select=*&doctor_id=eq.1ddf6eac-dd67-4615-83b7-937d71361e5b 406 (Not Acceptable)
+(anonymous)	@	fetch.ts:7
+(anonymous)	@	fetch.ts:34
+await in (anonymous)		
+then	@	PostgrestBuilder.ts:122
+index.tsx:125 
+ GET https://e3370ef6-486e-4549-b8a8-747bfd046c6d-00-xt8b01lf1gfx.picard.replit.dev/api/templates 500 (Internal Server Error)
+loadTemplates	@	index.tsx:125
+DoctorDashboard.useEffect	@	index.tsx:115
+<DoctorDashboard>		
+App	@	_app.tsx:51
+fetch.ts:7 
+ GET https://hqlqtnjnyhafdnfetjac.supabase.co/rest/v1/doctor_document_settings?select=*&doctor_id=eq.1ddf6eac-dd67-4615-83b7-937d71361e5b 406 (Not Acceptable)
+(anonymous)	@	fetch.ts:7
+(anonymous)	@	fetch.ts:34
+await in (anonymous)		
+then	@	PostgrestBuilder.ts:122
+index.tsx:125 
+ GET https://e3370ef6-486e-4549-b8a8-747bfd046c6d-00-xt8b01lf1gfx.picard.replit.dev/api/templates 500 (Internal Server Error)
+loadTemplates	@	index.tsx:125
+DoctorDashboard.useEffect	@	index.tsx:115
+<DoctorDashboard>		
+App	@	_app.tsx:51
+heidi.js:241 processing removed
+index.tsx:144 
+ GET https://e3370ef6-486e-4549-b8a8-747bfd046c6d-00-xt8b01lf1gfx.picard.replit.dev/api/documents?limit=20 500 (Internal Server Error)
+loadDocuments	@	index.tsx:144
+onValueChange	@	index.tsx:359
+<TabsTrigger>		
+_c2	@	tabs.tsx:27
+<TabsTrigger>		
+DoctorDashboard	@	index.tsx:364
+<DoctorDashboard>		
+App	@	_app.tsx:51
+2
+heidi.js:241 processing removed
+settings.tsx:174 
+ GET https://e3370ef6-486e-4549-b8a8-747bfd046c6d-00-xt8b01lf1gfx.picard.replit.dev/api/templates 500 (Internal Server Error)
+loadTemplates	@	settings.tsx:174
+SettingsPage.useEffect	@	settings.tsx:147
+<SettingsPage>		
+App	@	_app.tsx:51
+heidi.js:241 processing removed
+settings.tsx:174 
+ GET https://e3370ef6-486e-4549-b8a8-747bfd046c6d-00-xt8b01lf1gfx.picard.replit.dev/api/templates 500 (Internal Server Error)
+loadTemplates	@	settings.tsx:174
+SettingsPage.useEffect	@	settings.tsx:147
+<SettingsPage>		
+App	@	_app.tsx:51
+7
+heidi.js:241 processing removed
+index.tsx:125 
+ GET https://e3370ef6-486e-4549-b8a8-747bfd046c6d-00-xt8b01lf1gfx.picard.replit.dev/api/templates 500 (Internal Server Error)
+loadTemplates	@	index.tsx:125
+DoctorDashboard.useEffect	@	index.tsx:115
+<DoctorDashboard>		
+App	@	_app.tsx:51
+fetch.ts:7 
+ GET https://hqlqtnjnyhafdnfetjac.supabase.co/rest/v1/doctor_document_settings?select=*&doctor_id=eq.1ddf6eac-dd67-4615-83b7-937d71361e5b 406 (Not Acceptable)
+(anonymous)	@	fetch.ts:7
+(anonymous)	@	fetch.ts:34
+await in (anonymous)		
+then	@	PostgrestBuilder.ts:122
+fetch.ts:7 
+ GET https://hqlqtnjnyhafdnfetjac.supabase.co/rest/v1/doctor_document_settings?select=*&doctor_id=eq.1ddf6eac-dd67-4615-83b7-937d71361e5b 406 (Not Acceptable)
+(anonymous)	@	fetch.ts:7
+(anonymous)	@	fetch.ts:34
+await in (anonymous)		
+then	@	PostgrestBuilder.ts:122
+index.tsx:125 
+ GET https://e3370ef6-486e-4549-b8a8-747bfd046c6d-00-xt8b01lf1gfx.picard.replit.dev/api/templates 500 (Internal Server Error)
+loadTemplates	@	index.tsx:125
+DoctorDashboard.useEffect	@	index.tsx:115
+<DoctorDashboard>		
+App	@	_app.tsx:51

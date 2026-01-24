@@ -1,0 +1,200 @@
+heidi.js:241 Error processing removed node: TypeError: c.hasAttribute is not a function
+    at heidi.js:241:11461
+    at NodeList.forEach (<anonymous>)
+    at Gy.MutationObserver.observe.subtree (heidi.js:241:11440)
+(anonymous) @ heidi.js:241Understand this error
+heidi.js:241 processing removed
+forward-logs-shared.ts:95 Login result: Object
+forward-logs-shared.ts:95 Login successful, redirecting...
+4heidi.js:241 processing removed
+forward-logs-shared.ts:95 [Fast Refresh] rebuilding
+forward-logs-shared.ts:95 [Fast Refresh] done in 1694ms
+heidi.js:241 processing removed
+login.tsx:34 Attempting login for: drz@drzelisko.com
+login.tsx:114 Error processing removed node: TypeError: c.hasAttribute is not a function
+    at heidi.js:241:11461
+    at NodeList.forEach (<anonymous>)
+    at Gy.MutationObserver.observe.subtree (heidi.js:241:11440)
+(anonymous) @ heidi.js:241
+Gy.MutationObserver.observe.subtree @ heidi.js:241
+childList
+setTextContent @ react-dom-client.development.js:2668
+resetTextContent @ react-dom-client.development.js:22172
+commitPlacement @ react-dom-client.development.js:13733
+runWithFiberInDEV @ react-dom-client.development.js:871
+commitReconciliationEffects @ react-dom-client.development.js:15139
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14592
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14821
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14591
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14821
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14591
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14821
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14821
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14591
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14821
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14591
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:15102
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14591
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:15102
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:15102
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:15102
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:15102
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:15102
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14591
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:15102
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:15102
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14607
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14591
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14607
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14591
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:15102
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14591
+recursivelyTraverseMutationEffects @ react-dom-client.development.js:14576
+commitMutationEffectsOnFiber @ react-dom-client.development.js:14883
+flushMutationEffects @ react-dom-client.development.js:17979
+commitRoot @ react-dom-client.development.js:17953
+commitRootWhenReady @ react-dom-client.development.js:16824
+performWorkOnRoot @ react-dom-client.development.js:16722
+performSyncWorkOnRoot @ react-dom-client.development.js:18972
+flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:18814
+processRootScheduleInMicrotask @ react-dom-client.development.js:18853
+(anonymous) @ react-dom-client.development.js:18991
+<LoaderCircle>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+LoginPage @ login.tsx:114
+react_stack_bottom_frame @ react-dom-client.development.js:25904
+renderWithHooksAgain @ react-dom-client.development.js:7762
+renderWithHooks @ react-dom-client.development.js:7674
+updateFunctionComponent @ react-dom-client.development.js:10166
+beginWork @ react-dom-client.development.js:11778
+runWithFiberInDEV @ react-dom-client.development.js:871
+performUnitOfWork @ react-dom-client.development.js:17641
+workLoopSync @ react-dom-client.development.js:17469
+renderRootSync @ react-dom-client.development.js:17450
+performWorkOnRoot @ react-dom-client.development.js:16504
+performSyncWorkOnRoot @ react-dom-client.development.js:18972
+flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:18814
+processRootScheduleInMicrotask @ react-dom-client.development.js:18853
+(anonymous) @ react-dom-client.development.js:18991
+<LoginPage>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+App @ _app.tsx:51
+react_stack_bottom_frame @ react-dom-client.development.js:25904
+renderWithHooksAgain @ react-dom-client.development.js:7762
+renderWithHooks @ react-dom-client.development.js:7674
+updateFunctionComponent @ react-dom-client.development.js:10166
+beginWork @ react-dom-client.development.js:11778
+runWithFiberInDEV @ react-dom-client.development.js:871
+performUnitOfWork @ react-dom-client.development.js:17641
+workLoopConcurrentByScheduler @ react-dom-client.development.js:17635
+renderRootConcurrent @ react-dom-client.development.js:17617
+performWorkOnRoot @ react-dom-client.development.js:16503
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:18957
+performWorkUntilDeadline @ scheduler.development.js:45Understand this error
+heidi.js:241 processing removed
+login.tsx:40 Login result: {data: {…}, error: null}
+login.tsx:48 Login successful, redirecting...
+2heidi.js:241 processing removed
+fetch.ts:7  GET https://hqlqtnjnyhafdnfetjac.supabase.co/rest/v1/doctor_document_settings?select=*&doctor_id=eq.1ddf6eac-dd67-4615-83b7-937d71361e5b 406 (Not Acceptable)
+(anonymous) @ fetch.ts:7
+(anonymous) @ fetch.ts:34
+await in (anonymous)
+then @ PostgrestBuilder.ts:122Understand this error
+index.tsx:125  GET https://e3370ef6-486e-4549-b8a8-747bfd046c6d-00-xt8b01lf1gfx.picard.replit.dev/api/templates 500 (Internal Server Error)
+loadTemplates @ index.tsx:125
+DoctorDashboard.useEffect @ index.tsx:115
+react_stack_bottom_frame @ react-dom-client.development.js:25989
+runWithFiberInDEV @ react-dom-client.development.js:871
+commitHookEffectListMount @ react-dom-client.development.js:13249
+commitHookPassiveMountEffects @ react-dom-client.development.js:13336
+commitPassiveMountOnFiber @ react-dom-client.development.js:15484
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15476
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15476
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15504
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15476
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15504
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15476
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15476
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15519
+flushPassiveEffects @ react-dom-client.development.js:18432
+flushPendingEffects @ react-dom-client.development.js:18358
+performSyncWorkOnRoot @ react-dom-client.development.js:18969
+flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:18814
+flushSpawnedWork @ react-dom-client.development.js:18334
+commitRoot @ react-dom-client.development.js:17955
+commitRootWhenReady @ react-dom-client.development.js:16824
+performWorkOnRoot @ react-dom-client.development.js:16722
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:18957
+performWorkUntilDeadline @ scheduler.development.js:45
+<DoctorDashboard>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+App @ _app.tsx:51
+react_stack_bottom_frame @ react-dom-client.development.js:25904
+renderWithHooksAgain @ react-dom-client.development.js:7762
+renderWithHooks @ react-dom-client.development.js:7674
+updateFunctionComponent @ react-dom-client.development.js:10166
+beginWork @ react-dom-client.development.js:11778
+runWithFiberInDEV @ react-dom-client.development.js:871
+performUnitOfWork @ react-dom-client.development.js:17641
+workLoopConcurrentByScheduler @ react-dom-client.development.js:17635
+renderRootConcurrent @ react-dom-client.development.js:17617
+performWorkOnRoot @ react-dom-client.development.js:16503
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:18957
+performWorkUntilDeadline @ scheduler.development.js:45Understand this error
+fetch.ts:7  GET https://hqlqtnjnyhafdnfetjac.supabase.co/rest/v1/doctor_document_settings?select=*&doctor_id=eq.1ddf6eac-dd67-4615-83b7-937d71361e5b 406 (Not Acceptable)
+(anonymous) @ fetch.ts:7
+(anonymous) @ fetch.ts:34
+await in (anonymous)
+then @ PostgrestBuilder.ts:122Understand this error
+index.tsx:125  GET https://e3370ef6-486e-4549-b8a8-747bfd046c6d-00-xt8b01lf1gfx.picard.replit.dev/api/templates 500 (Internal Server Error)
