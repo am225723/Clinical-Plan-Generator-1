@@ -245,6 +245,49 @@ export const generateTreatmentPlan = async (inputs: ClinicalInputs): Promise<Gen
 };
 
 function buildPrompt(inputs: ClinicalInputs): string {
+  // Try to get custom prompt from localStorage
+  const customSystemPrompt = typeof localStorage !== 'undefined'
+    ? localStorage.getItem('clinical-system-prompt')
+    : null;
+
+  if (customSystemPrompt) {
+     return `${customSystemPrompt}
+
+INPUTS:
+- Intake: ${inputs.intake_form_data || "Not provided"}
+- Session Transcript: ${inputs.session_transcripts || "Not provided"}
+- Scores: ${inputs.assessment_scores || "Not provided"}
+- Notes: ${inputs.provider_notes || "Not provided"}
+
+REQUIREMENTS:
+- Strictly follow the JSON structure provided below.
+- Use professional clinical language.
+- Infer missing data where reasonable based on context, or label as "Not documented".
+- Diagnoses must include ICD-10 and DSM-5-TR codes.
+- Treatment goals must be SMART.
+
+OUTPUT JSON FORMAT:
+{
+  "chief_complaint": "string",
+  "hpi": "string (comprehensive narrative)",
+  "psych_ros": ["string", "string"],
+  "substance_use": ["string"],
+  "psych_medical_history": "string",
+  "current_meds": ["string"],
+  "mse": ["string (Appearance: ...)", "string (Behavior: ...)"],
+  "risk_assessment": { "level": "string", "justification": "string" },
+  "diagnosis": [{ "code": "string", "name": "string", "type": "ICD-10" | "DSM-5-TR" }],
+  "treatment_goals": [{ "goal": "string", "objectives": ["string"] }],
+  "mdm": { "complexity": "string", "code": "string", "rationale": "string" },
+  "psychotherapy_addon": "string",
+  "prescription_plan": "string",
+  "informed_consent": "string",
+  "labs": "string",
+  "missing_data": ["string"]
+}
+`;
+  }
+
   return `
 Role: Expert Clinical Psychiatrist.
 Task: Generate a structured mental health treatment plan JSON from the following raw inputs.
