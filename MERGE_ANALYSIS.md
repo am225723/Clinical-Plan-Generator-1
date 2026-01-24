@@ -175,6 +175,8 @@ This document compares the capabilities of **stitch-generator** (UI/UX mockups) 
   - Client ID
   - Date of Birth
   - Date of Service
+  - Appointment Type
+  - Provider Name (auto-populated from profile)
 - **Clinical Input Tabs**:
   - Intake Form (text area)
   - Session Transcript (text area)
@@ -183,6 +185,12 @@ This document compares the capabilities of **stitch-generator** (UI/UX mockups) 
 - **Template Selection**:
   - Dropdown to select custom templates
   - Templates filter by doctor
+  - Default template auto-selection
+- **AI Generation Controls**:
+  - **Detail Level Selector**: Brief / Standard / Detailed
+  - **AI Adjustment Prompt**: Free-text input for additional AI instructions
+  - **Append Mode Toggle**: Enhance existing plan vs generate new
+  - **Existing Plan Merge**: When append mode, merges new content with existing
 - **AI Document Generation**:
   - Perplexity AI integration (llama-3.1-sonar-large-128k-online)
   - Template-specific AI prompts
@@ -193,28 +201,38 @@ This document compares the capabilities of **stitch-generator** (UI/UX mockups) 
 - **Document Actions**:
   - Save to History
   - Print Document
-  - View as PDF
+  - View as PDF (distinct from download - opens in new window)
+  - Download PDF
 - **Document History Tab**:
   - List saved documents
-  - Search by patient name
+  - **Search by patient name** with query parameter
+  - **Limit parameter** (default 20 documents)
+  - Load document to edit
   - View past documents
   - Delete documents
 
 #### 4. Settings Page
-- **Tabs**: Practice Settings, Document Templates, PDF Styling
-- **Practice Settings**:
-  - Practice Name
-  - Logo upload (to Supabase Storage)
-  - Provider Name
+- **Tabs**: Templates, AI Configuration, Document Settings
 - **Document Templates** (per doctor):
   - Create new templates
   - Template types: Treatment Plan, DARP Note, Psych Note, Progress Note, Discharge Summary, Custom
-  - Custom AI prompts per template
+  - Custom AI prompts per template (with default prompts per type)
   - Edit/Delete templates
-  - Set default template
-- **PDF Styling**:
-  - Font size adjustment
-  - Color scheme
+  - **Duplicate template** (creates copy with "(Copy)" suffix)
+  - Set default template (auto-selected in generation)
+- **AI Configuration**:
+  - Global treatment plan prompt editor
+  - Default prompts for each template type
+- **Document Settings** (Doctor-specific):
+  - **Logo upload** (to Supabase Storage via signed URL)
+  - **Header Configuration**: Text, alignment (left/center/right)
+  - **Footer Configuration**: Text, alignment
+  - **First Page Header**: Separate config for first page
+  - **First Page Footer**: Separate config for first page
+  - **Patient Field Layout**: Configurable order of patient fields
+  - **PDF Style**:
+    - Font size adjustment (default 12pt)
+    - Font family selection (default Arial)
 
 #### 5. AI Integration
 - **Provider**: Perplexity AI (via API)
@@ -242,24 +260,35 @@ This document compares the capabilities of **stitch-generator** (UI/UX mockups) 
 | **Practice Overview Stats** | ✅ Full UI | ❌ Not present | ✅ INCLUDE (new) |
 | **Dark/Light Mode** | ✅ Full UI | ❌ Not present | ✅ INCLUDE (new) |
 | **Multi-File Upload** | ✅ PDF/Audio/Video/Text | ❌ Text only | ✅ UPGRADE |
-| **Patient Intake Form** | ✅ Glass UI | ✅ Basic form | ✅ UPGRADE styling |
-| **Template Selection** | ✅ Chips | ✅ Dropdown | ✅ UPGRADE to chips |
+| **Patient Intake Form** | ✅ Glass UI | ✅ Full form | ✅ UPGRADE styling |
+| **Template Selection** | ✅ Chips | ✅ Dropdown + Default | ✅ UPGRADE to chips |
 | **AI Document Generation** | ✅ UI only | ✅ Full Perplexity API | ✅ KEEP logic |
-| **Pre-Generation Validation** | ✅ Full UI | ❌ Not present | ✅ INCLUDE (new) |
-| **Missing Field Alerts** | ✅ Full UI | ❌ Not present | ✅ INCLUDE (new) |
+| **Detail Level Selection** | ✅ UI (per section) | ✅ Brief/Standard/Detailed | ✅ MERGE (both) |
+| **AI Adjustment Prompt** | ❌ Not present | ✅ Free-text input | ✅ KEEP logic |
+| **Append Mode** | ❌ Not present | ✅ Enhance existing plan | ✅ KEEP logic |
+| **Pre-Generation Validation** | ✅ Full UI | ❌ Basic validation | ✅ UPGRADE UI |
+| **Missing Field Alerts** | ✅ Full UI | ✅ Toast notifications | ✅ UPGRADE UI |
 | **Note Editor with AI Refine** | ✅ Full UI | ❌ Basic display | ✅ UPGRADE |
-| **AI Detail Level Slider** | ✅ Full UI | ❌ Not present | ✅ INCLUDE (new) |
-| **Format & Export Controls** | ✅ Full UI | ✅ Basic (font size only) | ✅ UPGRADE |
+| **AI Detail Level Slider** | ✅ UI per section | ✅ Global selector | ✅ MERGE (per section + global) |
+| **Format & Export Controls** | ✅ Full UI | ✅ Header/Footer/Font | ✅ MERGE (both) |
 | **PDF Export** | ✅ UI button | ✅ Full implementation | ✅ KEEP logic |
-| **Print/Share** | ✅ UI buttons | ❌ Print only | ✅ UPGRADE (add share) |
-| **Template Configuration** | ✅ Full UI | ✅ Basic form | ✅ UPGRADE styling |
-| **System Prompt Editor** | ✅ Full UI | ✅ Textarea | ✅ UPGRADE styling |
+| **View as PDF** | ❌ Not present | ✅ Opens in new window | ✅ KEEP logic |
+| **Print/Share** | ✅ UI buttons | ✅ Print only | ✅ UPGRADE (add share) |
+| **Template Configuration** | ✅ Full UI | ✅ Full CRUD | ✅ UPGRADE styling |
+| **Template Duplication** | ❌ Not present | ✅ Copy with "(Copy)" | ✅ KEEP logic |
+| **Default Template** | ❌ Not present | ✅ Auto-selection | ✅ KEEP logic |
+| **System Prompt Editor** | ✅ Full UI | ✅ Textarea + Defaults | ✅ MERGE (both) |
 | **Clinical Guardrails** | ✅ Toggles UI | ❌ Not present | ✅ INCLUDE (new) |
 | **Section Ordering (drag)** | ✅ Full UI | ❌ Not present | ✅ INCLUDE (new) |
 | **Note Preview** | ✅ Full UI | ❌ Not present | ✅ INCLUDE (new) |
 | **Test Logic Button** | ✅ Full UI | ❌ Not present | ✅ INCLUDE (new) |
 | **Document History** | ❌ Not present | ✅ Full implementation | ✅ KEEP logic |
-| **Search Documents** | ❌ Not present | ✅ By patient name | ✅ KEEP logic |
+| **Search Documents** | ❌ Not present | ✅ Query + Limit params | ✅ KEEP logic |
+| **Load Document to Edit** | ❌ Not present | ✅ Populate form | ✅ KEEP logic |
+| **Header/Footer Config** | ❌ Not present | ✅ Text + Alignment | ✅ KEEP logic |
+| **First Page Config** | ❌ Not present | ✅ Separate header/footer | ✅ KEEP logic |
+| **Patient Field Layout** | ❌ Not present | ✅ Custom order | ✅ KEEP logic |
+| **Logo Upload** | ❌ Not present | ✅ Supabase Storage | ✅ KEEP logic |
 | **Supabase Auth** | ❌ Not present | ✅ Full implementation | ✅ KEEP logic |
 | **Role-Based Access** | ❌ Not present | ✅ Admin/Doctor | ✅ KEEP logic |
 | **User Management** | ❌ Not present | ✅ Full implementation | ✅ KEEP logic |
@@ -316,34 +345,50 @@ This document compares the capabilities of **stitch-generator** (UI/UX mockups) 
 1. **Authentication**
    - Supabase email/password login
    - Role-based access (admin/doctor)
-   - Server-side auth protection
+   - Server-side auth protection (requireAuth, requireAdmin, requireDoctor)
 
 2. **User Management (Admin)**
    - Create/edit/disable users
    - Role assignment
 
 3. **Document Generation**
-   - Perplexity AI integration
+   - Perplexity AI integration (llama-3.1-sonar-large-128k-online)
    - Template-specific prompts
    - JSON parsing with fallbacks
+   - **Detail Level Selection**: Brief / Standard / Detailed
+   - **AI Adjustment Prompt**: Free-text input for additional instructions
+   - **Append Mode**: Enhance existing plan vs generate new
 
 4. **Document Templates**
    - Custom templates per doctor
    - Template types (Treatment Plan, DARP, Psych, Progress, Discharge, Custom)
    - AI prompt customization
+   - **Duplicate template** (creates copy with "(Copy)" suffix)
+   - **Default template** auto-selection
 
 5. **Document History**
    - Save documents
-   - Search by patient name
-   - View/delete past documents
+   - **Search by patient name** with query parameter
+   - **Limit parameter** (default 20 documents)
+   - **Load document to edit** (populates form)
+   - View past documents
+   - Delete documents
+   - **View as PDF** (distinct from download - opens in new window)
 
-6. **PDF Export**
+6. **PDF Export & Configuration**
    - HTML to PDF generation
-   - Custom styling
+   - **Header/Footer Configuration**: Text, alignment
+   - **First Page Config**: Separate header/footer for first page
+   - **Patient Field Layout**: Configurable order
+   - **Font size adjustment** (default 12pt)
+   - **Font family selection** (default Arial)
 
 7. **Settings**
-   - Practice name/logo
+   - Practice name
+   - **Logo upload** (Supabase Storage via signed URL)
    - PDF styling options
+   - Global AI prompt editor
+   - Default prompts for each template type
 
 ### Upgraded Features (merged)
 
@@ -397,13 +442,48 @@ This document compares the capabilities of **stitch-generator** (UI/UX mockups) 
 
 ## Verification Checklist
 
-Before proceeding to implementation, confirm:
+Before proceeding to implementation, confirm all capabilities are preserved:
 
-- [ ] All stitch-generator UI features documented
-- [ ] All Clinical-Plan-Generator logic preserved
-- [ ] No capabilities dropped without explicit decision
-- [ ] Merge strategy clear for each feature
-- [ ] Priority order makes sense for delivery
+### stitch-generator UI Features
+- [x] Dashboard with calendar and practice stats
+- [x] Dark/Light mode toggle
+- [x] Multi-file upload (PDF/Audio/Video/Text)
+- [x] Glass-morphism styling
+- [x] Pre-generation validation screen
+- [x] Missing field alerts with inline inputs
+- [x] AI optimization tips
+- [x] Rich note editor with formatting
+- [x] AI detail level slider per section
+- [x] "Refine with AI" per section
+- [x] Format & export panel (text size, line height, weight)
+- [x] Clinical guardrails toggles
+- [x] Section ordering (drag-to-reorder)
+- [x] Note preview with "Test Logic"
+- [x] Bottom navigation with FAB
+
+### Clinical-Plan-Generator Logic Features
+- [x] Supabase authentication (email/password)
+- [x] Role-based access control (admin/doctor)
+- [x] Server-side auth protection (requireAuth, requireAdmin, requireDoctor)
+- [x] User management (create/edit/disable)
+- [x] Perplexity AI integration
+- [x] Detail level selection (Brief/Standard/Detailed)
+- [x] AI adjustment prompt input
+- [x] Append mode (enhance existing plan)
+- [x] Template CRUD with default prompts
+- [x] Template duplication
+- [x] Default template auto-selection
+- [x] Document history with search (query + limit)
+- [x] Load document to edit
+- [x] View as PDF (distinct action)
+- [x] PDF configuration (header/footer, first page, font)
+- [x] Patient field layout customization
+- [x] Logo upload via Supabase Storage
+
+### Merge Strategy Confirmed
+- [x] Merge strategy clear for each feature
+- [x] Priority order makes sense for delivery
+- [x] No capabilities dropped
 
 ---
 
