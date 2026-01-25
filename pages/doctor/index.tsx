@@ -353,8 +353,8 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
 
   const checkMissingFields = (): string[] => {
     const missing: string[] = [];
-    if (!clinicalInputs.intake_form.trim()) missing.push('Intake Form');
-    if (!clinicalInputs.session_transcript.trim()) missing.push('Session Transcript');
+    if (!clinicalInputs.intake_form_data.trim()) missing.push('Intake Form');
+    if (!clinicalInputs.session_transcripts.trim()) missing.push('Session Transcript');
     if (!clinicalInputs.assessment_scores.trim()) missing.push('Assessment Scores');
     if (!clinicalInputs.provider_notes.trim()) missing.push('Provider Notes');
     return missing;
@@ -372,8 +372,8 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
 
   const handleValidationComplete = (field: string, value: string) => {
     const fieldMap: Record<string, keyof typeof clinicalInputs> = {
-      'Intake Form': 'intake_form',
-      'Session Transcript': 'session_transcript',
+      'Intake Form': 'intake_form_data',
+      'Session Transcript': 'session_transcripts',
       'Assessment Scores': 'assessment_scores',
       'Provider Notes': 'provider_notes',
     };
@@ -488,7 +488,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
     router.push('/login');
   };
 
-  const missingFields = Object.entries(validationErrors).filter(([_, v]) => v);
+  const patientFormErrors = Object.entries(validationErrors).filter(([_, v]) => v);
 
   return (
     <>
@@ -682,12 +682,12 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                     </div>
                   </div>
 
-                  {missingFields.length > 0 && (
+                  {patientFormErrors.length > 0 && (
                     <Alert variant="destructive">
                       <AlertCircle className="h-4 w-4" />
                       <AlertTitle>Missing Required Fields</AlertTitle>
                       <AlertDescription>
-                        Please fill in: {missingFields.map(([key]) => key.replace('_', ' ')).join(', ')}
+                        Please fill in: {patientFormErrors.map(([key]) => key.replace('_', ' ')).join(', ')}
                       </AlertDescription>
                     </Alert>
                   )}
@@ -860,40 +860,26 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                 showPreview ? (
                   <DocumentPreview
                     content={editableContent}
-                    patientInfo={{
-                      name: patientData.patient_name,
-                      id: patientData.client_id,
-                      dob: patientData.date_of_birth,
-                    }}
-                    providerInfo={{
-                      name: patientData.provider_name,
-                      verified: true,
-                    }}
+                    patientName={patientData.patient_name}
+                    dateOfService={patientData.date_of_service || new Date().toISOString()}
+                    providerName={patientData.provider_name}
+                    templateType={selectedTemplate?.template_type || 'treatment_plan'}
                     onPrint={() => handleDownloadPdf()}
                     onDownload={handleDownloadPdf}
-                    onBack={() => setShowPreview(false)}
+                    onEdit={() => setShowPreview(false)}
+                    onSave={handleSaveDocument}
+                    isSaving={isSaving}
                   />
                 ) : (
                   <NoteEditor
                     content={editableContent}
-                    onChange={setEditableContent}
+                    onContentChange={setEditableContent}
                     detailLevel={editorDetailLevel}
                     onDetailLevelChange={setEditorDetailLevel}
                     onRefine={handleRefine}
                     onRegenerate={handleRegenerate}
-                    isLoading={isGenerating}
-                    patientInfo={{
-                      name: patientData.patient_name,
-                      id: patientData.client_id,
-                    }}
-                    providerInfo={{
-                      name: patientData.provider_name,
-                      verified: true,
-                    }}
-                    documentTitle={selectedTemplate ? TEMPLATE_TYPE_LABELS[selectedTemplate.template_type] || 'Clinical Document' : 'Clinical Document'}
-                    onSave={handleSaveDocument}
-                    onPreview={() => setShowPreview(true)}
-                    isSaving={isSaving}
+                    isGenerating={isGenerating}
+                    templateType={selectedTemplate?.template_type || 'treatment_plan'}
                   />
                 )
               ) : (
