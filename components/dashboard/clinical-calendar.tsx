@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { CalendarPlus, CheckCircle, FileText, Sparkles, X, Clock, MapPin } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { CalendarPlus, CheckCircle, FileText, Clock, MapPin } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,53 +22,41 @@ interface ClinicalCalendarProps {
   onGenerateForAppointment?: (appointment: Appointment) => void;
 }
 
-const mockAppointments: Appointment[] = [
-  {
-    id: '1',
-    time: '09:00',
-    period: 'AM',
-    patientName: 'Sarah Jenkins',
-    appointmentType: 'Initial Evaluation',
-    location: 'Room 204',
-    status: 'completed',
-    attachedNote: 'Initial psychiatric evaluation completed. Patient presents with symptoms of generalized anxiety disorder.',
-    documentId: 'doc-1',
-  },
-  {
-    id: '2',
-    time: '10:30',
-    period: 'AM',
-    patientName: 'Michael Barnes',
-    appointmentType: 'Medication Mgmt',
-    location: 'Virtual',
-    status: 'pending',
-    hasFlag: true,
-  },
-  {
-    id: '3',
-    time: '01:00',
-    period: 'PM',
-    patientName: 'Emma Roberts',
-    appointmentType: 'Therapy Session',
-    location: 'Room 204',
-    status: 'in_progress',
-  },
-  {
-    id: '4',
-    time: '02:30',
-    period: 'PM',
-    patientName: 'James Wilson',
-    appointmentType: 'Follow-up',
-    location: 'Virtual',
-    status: 'pending',
-  },
-];
+const STORAGE_KEY = 'importedAppointments';
 
 export function ClinicalCalendar({ onGenerateForAppointment }: ClinicalCalendarProps) {
-  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [importedAppointments, setImportedAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [noteText, setNoteText] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        setImportedAppointments(JSON.parse(stored));
+      } catch {
+        setImportedAppointments([]);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        const response = await fetch('/api/dashboard/appointments');
+        if (!response.ok) throw new Error('Failed to load appointments');
+        const data = await response.json();
+        setAppointments(data.appointments || []);
+      } catch (error) {
+        console.error('Failed to fetch appointments:', error);
+      }
+    };
+
+    void fetchAppointments();
+  }, []);
 
   const handleAppointmentClick = (apt: Appointment) => {
     setSelectedAppointment(apt);
@@ -107,21 +95,55 @@ export function ClinicalCalendar({ onGenerateForAppointment }: ClinicalCalendarP
     setIsDialogOpen(false);
   };
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const events = parseIcal(text);
+      const merged = [...importedAppointments, ...events];
+      setImportedAppointments(merged);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    } catch (error) {
+      console.error('Failed to import iCal:', error);
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const combinedAppointments = [...appointments, ...importedAppointments];
+
   return (
     <>
       <section className="px-6 py-2">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-foreground text-lg font-bold tracking-tight">Clinical Calendar</h3>
-          <button className="glass-panel flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-card transition-colors group border-border shadow-sm">
+          <button
+            onClick={handleImportClick}
+            className="glass-panel flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-card transition-colors group border-border shadow-sm"
+            data-testid="button-import-ical"
+          >
             <CalendarPlus className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
             <span className="text-xs font-semibold text-muted-foreground group-hover:text-foreground">
               Import iCal
             </span>
           </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".ics"
+            onChange={handleImportChange}
+            className="hidden"
+          />
         </div>
         
         <div className="flex flex-col gap-3">
-          {appointments.map((apt) => (
+          {combinedAppointments.map((apt) => (
             <button
               key={apt.id}
               onClick={() => handleAppointmentClick(apt)}
@@ -260,4 +282,32 @@ export function ClinicalCalendar({ onGenerateForAppointment }: ClinicalCalendarP
       </Dialog>
     </>
   );
+}
+
+function parseIcal(icsText: string): Appointment[] {
+  const events = icsText.split('BEGIN:VEVENT').slice(1);
+  return events.map((eventText, index) => {
+    const summary = matchIcalField(eventText, 'SUMMARY') || 'Imported Appointment';
+    const location = matchIcalField(eventText, 'LOCATION') || 'Virtual';
+    const dtStart = matchIcalField(eventText, 'DTSTART') || '';
+    const date = dtStart ? new Date(dtStart.replace(/(\d{4})(\d{2})(\d{2})T?(\d{2})(\d{2})?.*/, '$1-$2-$3T$4:$5:00')) : new Date();
+    const hours = date.getHours() || 9;
+    const minutes = date.getMinutes();
+    const time = `${String(hours % 12 || 12).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    return {
+      id: `imported-${index}-${date.getTime()}`,
+      time,
+      period,
+      patientName: summary,
+      appointmentType: 'Imported',
+      location,
+      status: 'pending' as const,
+    };
+  });
+}
+
+function matchIcalField(text: string, field: string): string | null {
+  const match = text.match(new RegExp(`${field}:([^\\r\\n]*)`));
+  return match ? match[1].trim() : null;
 }

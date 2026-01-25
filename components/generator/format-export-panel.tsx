@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import { X, Printer, Share2, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 
 interface FormatExportPanelProps {
@@ -9,6 +7,12 @@ interface FormatExportPanelProps {
   onExportPdf: () => void;
   onPrint: () => void;
   onShare?: () => void;
+  textSize: number;
+  lineHeight: 'compact' | 'normal';
+  fontWeight: 'normal' | 'bold';
+  onTextSizeChange: (value: number) => void;
+  onLineHeightChange: (value: 'compact' | 'normal') => void;
+  onFontWeightChange: (value: 'normal' | 'bold') => void;
 }
 
 export function FormatExportPanel({
@@ -17,11 +21,13 @@ export function FormatExportPanel({
   onExportPdf,
   onPrint,
   onShare,
+  textSize,
+  lineHeight,
+  fontWeight,
+  onTextSizeChange,
+  onLineHeightChange,
+  onFontWeightChange,
 }: FormatExportPanelProps) {
-  const [textSize, setTextSize] = useState(12);
-  const [lineHeight, setLineHeight] = useState<'compact' | 'normal'>('normal');
-  const [fontWeight, setFontWeight] = useState<'normal' | 'bold'>('bold');
-
   if (!isOpen) return null;
 
   return (
@@ -50,7 +56,7 @@ export function FormatExportPanel({
               <span className="text-sm text-muted-foreground">A-</span>
               <Slider 
                 value={[textSize]}
-                onValueChange={([v]) => setTextSize(v)}
+                onValueChange={([v]) => onTextSizeChange(v)}
                 min={10}
                 max={16}
                 step={1}
@@ -65,7 +71,7 @@ export function FormatExportPanel({
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Line Height</span>
               <div className="flex rounded-lg bg-muted/50 p-1 ring-1 ring-border/50">
                 <button 
-                  onClick={() => setLineHeight('compact')}
+                  onClick={() => onLineHeightChange('compact')}
                   className={`flex-1 rounded py-1.5 text-center transition-all ${
                     lineHeight === 'compact' 
                       ? 'bg-background shadow-sm ring-1 ring-border/50 text-foreground' 
@@ -75,7 +81,7 @@ export function FormatExportPanel({
                   <span className="text-xs">Compact</span>
                 </button>
                 <button 
-                  onClick={() => setLineHeight('normal')}
+                  onClick={() => onLineHeightChange('normal')}
                   className={`flex-1 rounded py-1.5 text-center transition-all ${
                     lineHeight === 'normal' 
                       ? 'bg-background shadow-sm ring-1 ring-border/50 text-foreground' 
@@ -91,7 +97,7 @@ export function FormatExportPanel({
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Weight</span>
               <div className="flex rounded-lg bg-muted/50 p-1 ring-1 ring-border/50">
                 <button 
-                  onClick={() => setFontWeight('normal')}
+                  onClick={() => onFontWeightChange('normal')}
                   className={`flex-1 rounded py-1.5 text-center font-serif transition-all ${
                     fontWeight === 'normal' 
                       ? 'bg-background shadow-sm ring-1 ring-border/50 text-foreground' 
@@ -101,7 +107,7 @@ export function FormatExportPanel({
                   Aa
                 </button>
                 <button 
-                  onClick={() => setFontWeight('bold')}
+                  onClick={() => onFontWeightChange('bold')}
                   className={`flex-1 rounded py-1.5 text-center font-serif font-bold transition-all ${
                     fontWeight === 'bold' 
                       ? 'bg-background shadow-sm ring-1 ring-border/50 text-foreground' 
