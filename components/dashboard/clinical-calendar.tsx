@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { CalendarPlus, CheckCircle, FileText, Clock, MapPin } from 'lucide-react';
+import { CalendarPlus, CheckCircle, FileText, Clock, MapPin, Sparkles, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';

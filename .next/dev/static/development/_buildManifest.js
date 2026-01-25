@@ -1,4 +1,7 @@
 self.__BUILD_MANIFEST = {
+  "/": [
+    "static/chunks/pages/index.js"
+  ],
   "__rewrites": {
     "afterFiles": [],
     "beforeFiles": [],
@@ -11,6 +14,8 @@ self.__BUILD_MANIFEST = {
     "/admin",
     "/api/admin/create-user",
     "/api/admin/update-user",
+    "/api/dashboard/appointments",
+    "/api/dashboard/summary",
     "/api/documents",
     "/api/documents/[id]",
     "/api/generate-pdf",
@@ -22,6 +27,7 @@ self.__BUILD_MANIFEST = {
     "/api/upload-logo",
     "/doctor",
     "/login",
+    "/patients",
     "/settings"
   ]
 };self.__BUILD_MANIFEST_CB && self.__BUILD_MANIFEST_CB()
