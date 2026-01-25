@@ -519,7 +519,22 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
 
           <TabsContent value="dashboard" className="mt-0">
             <PracticeStats />
-            <ClinicalCalendar />
+            <ClinicalCalendar 
+              onGenerateForAppointment={(apt) => {
+                setPatientData({
+                  ...patientData,
+                  patient_name: apt.patientName,
+                  date_of_service: new Date().toISOString().split('T')[0],
+                });
+                if (apt.attachedNote) {
+                  setClinicalInputs({
+                    ...clinicalInputs,
+                    provider_notes: apt.attachedNote,
+                  });
+                }
+                setActiveTab('generate');
+              }}
+            />
           </TabsContent>
 
           <main className="container mx-auto py-6 px-4">
