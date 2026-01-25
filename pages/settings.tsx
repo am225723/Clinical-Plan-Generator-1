@@ -444,32 +444,54 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
       <Head>
         <title>Settings | GoldStandard Clinical</title>
       </Head>
-      <div className="min-h-screen bg-slate-50">
-        <header className="bg-white border-b px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => router.back()}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="font-serif font-bold text-xl text-slate-800">
-              Settings
-              <Badge variant="secondary" className="ml-3">{profile.role}</Badge>
-            </h1>
+      <div className="min-h-screen bg-background">
+        <header className="glass-panel border-b px-4 py-4 flex items-center justify-between sticky top-0 z-50">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => router.back()}
+              className="p-2 rounded-xl hover:bg-muted transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <h1 className="font-semibold text-lg flex items-center gap-2">
+                <SettingsIcon className="h-5 w-5 text-primary" />
+                Settings
+              </h1>
+              <p className="text-xs text-muted-foreground capitalize">{profile.role} Account</p>
+            </div>
           </div>
         </header>
 
-        <main className="container mx-auto py-8 px-4 max-w-4xl">
+        <main className="container mx-auto py-6 px-4 max-w-4xl pb-24">
           <Tabs defaultValue="templates">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="templates" disabled={profile.role !== 'doctor' && profile.role !== 'admin'}>
-                <FileText className="h-4 w-4 mr-2" /> Templates
-              </TabsTrigger>
-              <TabsTrigger value="ai">
-                <SettingsIcon className="h-4 w-4 mr-2" /> AI Configuration
-              </TabsTrigger>
-              <TabsTrigger value="document" disabled={profile.role !== 'doctor' && profile.role !== 'admin'}>
-                <FileText className="h-4 w-4 mr-2" /> Document Settings
-              </TabsTrigger>
-            </TabsList>
+            <div className="relative mb-6">
+              <TabsList className="w-full h-auto p-1 bg-muted/50 rounded-2xl grid grid-cols-3 gap-1">
+                <TabsTrigger 
+                  value="templates" 
+                  disabled={profile.role !== 'doctor' && profile.role !== 'admin'}
+                  className="rounded-xl py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  <FileText className="h-4 w-4 mr-1 sm:mr-2" /> 
+                  <span className="hidden sm:inline">Templates</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="ai"
+                  className="rounded-xl py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  <SettingsIcon className="h-4 w-4 mr-1 sm:mr-2" /> 
+                  <span className="hidden sm:inline">AI Config</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="document" 
+                  disabled={profile.role !== 'doctor' && profile.role !== 'admin'}
+                  className="rounded-xl py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  <FileText className="h-4 w-4 mr-1 sm:mr-2" /> 
+                  <span className="hidden sm:inline">Documents</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="templates" className="mt-6">
               {showTemplateEditor && editingTemplate ? (
@@ -496,19 +518,26 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
                   isSaving={saving}
                 />
               ) : (
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+              <div className="glass-panel rounded-3xl p-5 shadow-lg space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <CardTitle>Document Templates</CardTitle>
-                    <CardDescription>
-                      Create templates for different document types with custom AI prompts
-                    </CardDescription>
+                    <h2 className="text-lg font-semibold flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-primary" />
+                      Document Templates
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Create templates with custom AI prompts
+                    </p>
                   </div>
                   <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button onClick={openNewTemplateDialog} data-testid="button-new-template">
-                        <Plus className="h-4 w-4 mr-2" /> New Template
-                      </Button>
+                      <button 
+                        onClick={openNewTemplateDialog} 
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-colors"
+                        data-testid="button-new-template"
+                      >
+                        <Plus className="h-4 w-4" /> New Template
+                      </button>
                     </DialogTrigger>
                     <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
@@ -599,8 +628,8 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
-                </CardHeader>
-                <CardContent className="p-0">
+                </div>
+                <div>
                   {templatesLoading ? (
                     <div className="flex justify-center py-8">
                       <Loader2 className="h-6 w-6 animate-spin" />
@@ -615,189 +644,207 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
                       onCreate={openNewTemplateDialog}
                     />
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
               )}
             </TabsContent>
 
             <TabsContent value="ai" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>AI Treatment Plan Prompt</CardTitle>
-                  <CardDescription>
-                    Customize the system prompt used for generating treatment plans. 
-                    This affects all doctors in the system.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              <div className="glass-panel rounded-3xl p-5 shadow-lg space-y-5">
+                <div>
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <SettingsIcon className="h-5 w-5 text-primary" />
+                    AI Treatment Plan Prompt
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Customize the system prompt for generating treatment plans
+                  </p>
+                </div>
+                <div className="space-y-4">
                   <Textarea
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
                     rows={12}
-                    className="font-mono text-sm"
+                    className="font-mono text-sm bg-muted/50 border-border/50 rounded-xl"
                     data-testid="textarea-ai-prompt"
                   />
-                  <div className="flex justify-between items-center">
-                    <Button 
-                      variant="outline" 
+                  <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
+                    <button 
                       onClick={() => setAiPrompt(DEFAULT_PROMPT)}
+                      className="px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted transition-colors"
                       data-testid="button-reset-prompt"
                     >
                       Reset to Default
-                    </Button>
-                    <Button 
+                    </button>
+                    <button 
                       onClick={handleSaveAiPrompt} 
                       disabled={saving}
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-colors disabled:opacity-50"
                       data-testid="button-save-prompt"
                     >
-                      {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                       Save Prompt
-                    </Button>
+                    </button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </TabsContent>
 
-            <TabsContent value="document" className="mt-6 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Logo</CardTitle>
-                  <CardDescription>Upload your practice logo for PDF documents</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {doctorSettings.logo_url && (
-                    <div className="border rounded p-4 flex items-center justify-center bg-white">
-                      <img src={doctorSettings.logo_url} alt="Logo" className="max-h-20" />
-                    </div>
-                  )}
-                  <div className="flex items-center gap-4">
+            <TabsContent value="document" className="mt-6 space-y-5">
+              <div className="glass-panel rounded-3xl p-5 shadow-lg space-y-6">
+                <div className="flex items-center gap-3 pb-4 border-b border-border/50">
+                  <div className="p-2 rounded-xl bg-primary/10">
+                    <Upload className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Practice Logo</h3>
+                    <p className="text-xs text-muted-foreground">Upload for PDF documents</p>
+                  </div>
+                </div>
+                {doctorSettings.logo_url && (
+                  <div className="border border-border/50 rounded-2xl p-4 flex items-center justify-center bg-card/50">
+                    <img src={doctorSettings.logo_url} alt="Logo" className="max-h-20" />
+                  </div>
+                )}
+                <div className="flex items-center gap-4">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    disabled={uploading}
+                    className="rounded-xl"
+                    data-testid="input-logo-upload"
+                  />
+                  {uploading && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+                </div>
+              </div>
+
+              <div className="glass-panel rounded-3xl p-5 shadow-lg space-y-5">
+                <div className="flex items-center gap-3 pb-4 border-b border-border/50">
+                  <div className="p-2 rounded-xl bg-primary/10">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Header & Footer</h3>
+                    <p className="text-xs text-muted-foreground">Configure document headers and footers</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-muted-foreground">Header Text</Label>
                     <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      disabled={uploading}
-                      data-testid="input-logo-upload"
+                      value={(doctorSettings.header_config as any)?.text || ''}
+                      onChange={(e) => setDoctorSettings({
+                        ...doctorSettings,
+                        header_config: { ...(doctorSettings.header_config as any), text: e.target.value }
+                      })}
+                      placeholder="Practice Name / Header"
+                      className="rounded-xl"
+                      data-testid="input-header-text"
                     />
-                    {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-muted-foreground">Footer Text</Label>
+                    <Input
+                      value={(doctorSettings.footer_config as any)?.text || ''}
+                      onChange={(e) => setDoctorSettings({
+                        ...doctorSettings,
+                        footer_config: { ...(doctorSettings.footer_config as any), text: e.target.value }
+                      })}
+                      placeholder="Page numbers, copyright, etc."
+                      className="rounded-xl"
+                      data-testid="input-footer-text"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-muted-foreground">First Page Header</Label>
+                    <Input
+                      value={(doctorSettings.first_page_header_config as any)?.text || ''}
+                      onChange={(e) => setDoctorSettings({
+                        ...doctorSettings,
+                        first_page_header_config: { ...(doctorSettings.first_page_header_config as any), text: e.target.value }
+                      })}
+                      placeholder="Different header for first page"
+                      className="rounded-xl"
+                      data-testid="input-first-header-text"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-muted-foreground">First Page Footer</Label>
+                    <Input
+                      value={(doctorSettings.first_page_footer_config as any)?.text || ''}
+                      onChange={(e) => setDoctorSettings({
+                        ...doctorSettings,
+                        first_page_footer_config: { ...(doctorSettings.first_page_footer_config as any), text: e.target.value }
+                      })}
+                      placeholder="Different footer for first page"
+                      className="rounded-xl"
+                      data-testid="input-first-footer-text"
+                    />
+                  </div>
+                </div>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Header & Footer</CardTitle>
-                  <CardDescription>Configure document headers and footers</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Header Text</Label>
-                      <Input
-                        value={(doctorSettings.header_config as any)?.text || ''}
-                        onChange={(e) => setDoctorSettings({
-                          ...doctorSettings,
-                          header_config: { ...(doctorSettings.header_config as any), text: e.target.value }
-                        })}
-                        placeholder="Practice Name / Header"
-                        data-testid="input-header-text"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Footer Text</Label>
-                      <Input
-                        value={(doctorSettings.footer_config as any)?.text || ''}
-                        onChange={(e) => setDoctorSettings({
-                          ...doctorSettings,
-                          footer_config: { ...(doctorSettings.footer_config as any), text: e.target.value }
-                        })}
-                        placeholder="Page numbers, copyright, etc."
-                        data-testid="input-footer-text"
-                      />
-                    </div>
+              <div className="glass-panel rounded-3xl p-5 shadow-lg space-y-5">
+                <div className="flex items-center gap-3 pb-4 border-b border-border/50">
+                  <div className="p-2 rounded-xl bg-primary/10">
+                    <SettingsIcon className="h-5 w-5 text-primary" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>First Page Header</Label>
-                      <Input
-                        value={(doctorSettings.first_page_header_config as any)?.text || ''}
-                        onChange={(e) => setDoctorSettings({
-                          ...doctorSettings,
-                          first_page_header_config: { ...(doctorSettings.first_page_header_config as any), text: e.target.value }
-                        })}
-                        placeholder="Different header for first page"
-                        data-testid="input-first-header-text"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>First Page Footer</Label>
-                      <Input
-                        value={(doctorSettings.first_page_footer_config as any)?.text || ''}
-                        onChange={(e) => setDoctorSettings({
-                          ...doctorSettings,
-                          first_page_footer_config: { ...(doctorSettings.first_page_footer_config as any), text: e.target.value }
-                        })}
-                        placeholder="Different footer for first page"
-                        data-testid="input-first-footer-text"
-                      />
-                    </div>
+                  <div>
+                    <h3 className="font-semibold">PDF Styling</h3>
+                    <p className="text-xs text-muted-foreground">Font and styling for generated PDFs</p>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>PDF Styling</CardTitle>
-                  <CardDescription>Configure font and styling for generated PDFs</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Font Size</Label>
-                      <Select
-                        value={String((doctorSettings.pdf_style as any)?.font_size || 12)}
-                        onValueChange={(v) => updatePdfStyle('font_size', parseInt(v))}
-                      >
-                        <SelectTrigger data-testid="select-font-size">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="10">10pt</SelectItem>
-                          <SelectItem value="11">11pt</SelectItem>
-                          <SelectItem value="12">12pt</SelectItem>
-                          <SelectItem value="14">14pt</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Font Family (optional)</Label>
-                      <Select
-                        value={(doctorSettings.pdf_style as any)?.font_family || 'Arial'}
-                        onValueChange={(v) => updatePdfStyle('font_family', v)}
-                      >
-                        <SelectTrigger data-testid="select-font-family">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Arial">Arial</SelectItem>
-                          <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-                          <SelectItem value="Helvetica">Helvetica</SelectItem>
-                          <SelectItem value="Georgia">Georgia</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <Button 
-                      onClick={handleSaveDoctorSettings} 
-                      disabled={saving}
-                      data-testid="button-save-doc-settings"
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-muted-foreground">Font Size</Label>
+                    <Select
+                      value={String((doctorSettings.pdf_style as any)?.font_size || 12)}
+                      onValueChange={(v) => updatePdfStyle('font_size', parseInt(v))}
                     >
-                      {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                      Save Settings
-                    </Button>
+                      <SelectTrigger data-testid="select-font-size" className="rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10pt</SelectItem>
+                        <SelectItem value="11">11pt</SelectItem>
+                        <SelectItem value="12">12pt</SelectItem>
+                        <SelectItem value="14">14pt</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-muted-foreground">Font Family</Label>
+                    <Select
+                      value={(doctorSettings.pdf_style as any)?.font_family || 'Arial'}
+                      onValueChange={(v) => updatePdfStyle('font_family', v)}
+                    >
+                      <SelectTrigger data-testid="select-font-family" className="rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Arial">Arial</SelectItem>
+                        <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                        <SelectItem value="Helvetica">Helvetica</SelectItem>
+                        <SelectItem value="Georgia">Georgia</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex justify-end pt-2">
+                  <button 
+                    onClick={handleSaveDoctorSettings} 
+                    disabled={saving}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-colors disabled:opacity-50"
+                    data-testid="button-save-doc-settings"
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    Save Settings
+                  </button>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </main>
