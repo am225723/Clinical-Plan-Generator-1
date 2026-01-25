@@ -24,6 +24,9 @@ import { FileUpload, UploadedFile } from '@/components/generator/file-upload';
 import { NoteEditor } from '@/components/generator/note-editor';
 import { DocumentPreview } from '@/components/generator/document-preview';
 import { ValidationScreen } from '@/components/generator/validation-screen';
+import { FormatExportPanel } from '@/components/generator/format-export-panel';
+import { ClinicalContextTabs } from '@/components/generator/clinical-context-tabs';
+import { SlidersHorizontal, Check, Verified } from 'lucide-react';
 
 interface DocumentTemplate {
   id: string;
@@ -123,6 +126,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
   const [showPreview, setShowPreview] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [showFormatPanel, setShowFormatPanel] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -608,14 +612,46 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
             </TabsContent>
 
             <TabsContent value="generate">
-          <div className="grid lg:grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Patient Information</CardTitle>
-                  <CardDescription>Required fields for documentation</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
+          <div className="max-w-md mx-auto lg:max-w-none lg:grid lg:grid-cols-2 gap-6">
+            <div className="space-y-5">
+              {generatedPlan && (
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base font-bold">{patientData.patient_name || 'Patient'}</h2>
+                        {patientData.client_id && (
+                          <span className="text-[10px] font-bold tracking-wider text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
+                            ID: {patientData.client_id}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="h-3.5 w-3.5 text-primary" />
+                        <p className="text-xs text-muted-foreground font-medium">{patientData.provider_name}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowFormatPanel(true)}
+                    className="flex items-center justify-center rounded-full w-10 h-10 text-primary bg-primary/10 border border-primary/20 transition-all shadow-[0_0_10px_rgba(19,236,200,0.2)] hover:bg-primary/20"
+                    title="Format & Export Settings"
+                    data-testid="button-format-panel"
+                  >
+                    <SlidersHorizontal className="h-5 w-5" />
+                  </button>
+                </div>
+              )}
+              
+              <div className="glass-panel rounded-3xl p-5 shadow-lg relative overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="flex justify-between items-center mb-5 border-b border-border/50 pb-3 relative z-10">
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    Patient Information
+                  </h2>
+                </div>
+                <div className="space-y-4 relative z-10">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="patient_name">Patient Name *</Label>
@@ -691,159 +727,82 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                       </AlertDescription>
                     </Alert>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Clinical Inputs</CardTitle>
-                  <CardDescription>Upload files or enter clinical documentation</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <FileUpload files={uploadedFiles} onFilesChange={setUploadedFiles} />
-                  
-                  <div className="border-t pt-4">
-                  <Tabs defaultValue="intake">
-                    <TabsList className="grid grid-cols-4 w-full">
-                      <TabsTrigger value="intake">Intake</TabsTrigger>
-                      <TabsTrigger value="session">Session</TabsTrigger>
-                      <TabsTrigger value="scores">Scores</TabsTrigger>
-                      <TabsTrigger value="notes">Notes</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="intake" className="mt-4">
-                      <Textarea
-                        placeholder="Paste intake form data..."
-                        value={clinicalInputs.intake_form_data}
-                        onChange={(e) => setClinicalInputs({ ...clinicalInputs, intake_form_data: e.target.value })}
-                        rows={8}
-                        data-testid="textarea-intake"
-                      />
-                    </TabsContent>
-                    <TabsContent value="session" className="mt-4">
-                      <Textarea
-                        placeholder="Paste session transcripts..."
-                        value={clinicalInputs.session_transcripts}
-                        onChange={(e) => setClinicalInputs({ ...clinicalInputs, session_transcripts: e.target.value })}
-                        rows={8}
-                        data-testid="textarea-session"
-                      />
-                    </TabsContent>
-                    <TabsContent value="scores" className="mt-4">
-                      <Textarea
-                        placeholder="Enter assessment scores..."
-                        value={clinicalInputs.assessment_scores}
-                        onChange={(e) => setClinicalInputs({ ...clinicalInputs, assessment_scores: e.target.value })}
-                        rows={8}
-                        data-testid="textarea-scores"
-                      />
-                    </TabsContent>
-                    <TabsContent value="notes" className="mt-4">
-                      <Textarea
-                        placeholder="Provider notes..."
-                        value={clinicalInputs.provider_notes}
-                        onChange={(e) => setClinicalInputs({ ...clinicalInputs, provider_notes: e.target.value })}
-                        rows={8}
-                        data-testid="textarea-notes"
-                      />
-                    </TabsContent>
-                  </Tabs>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="glass-panel rounded-3xl p-5 shadow-lg space-y-5">
+                <FileUpload files={uploadedFiles} onFilesChange={setUploadedFiles} />
+                
+                <ClinicalContextTabs
+                  intakeData={clinicalInputs.intake_form_data}
+                  onIntakeChange={(v) => setClinicalInputs({ ...clinicalInputs, intake_form_data: v })}
+                  sessionData={clinicalInputs.session_transcripts}
+                  onSessionChange={(v) => setClinicalInputs({ ...clinicalInputs, session_transcripts: v })}
+                  scoresData={clinicalInputs.assessment_scores}
+                  onScoresChange={(v) => setClinicalInputs({ ...clinicalInputs, assessment_scores: v })}
+                  providerNotes={clinicalInputs.provider_notes}
+                  onProviderNotesChange={(v) => setClinicalInputs({ ...clinicalInputs, provider_notes: v })}
+                />
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5" /> AI Controls
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {templates.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>Document Template</Label>
-                      <Select
-                        value={selectedTemplate?.id || ''}
-                        onValueChange={(v) => {
-                          const template = templates.find(t => t.id === v);
-                          setSelectedTemplate(template || null);
-                        }}
+              <div className="space-y-4">
+                {templates.length > 0 && (
+                  <div className="flex overflow-x-auto gap-2 no-scrollbar pb-1 -mx-1 px-1">
+                    {templates.map((template) => (
+                      <button
+                        key={template.id}
+                        onClick={() => setSelectedTemplate(template)}
+                        className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                          selectedTemplate?.id === template.id
+                            ? 'bg-primary/10 border border-primary text-primary shadow-[0_0_10px_rgba(19,236,200,0.2)]'
+                            : 'bg-card/50 border border-border text-muted-foreground hover:bg-card hover:text-foreground'
+                        }`}
+                        data-testid={`template-pill-${template.id}`}
                       >
-                        <SelectTrigger data-testid="select-template">
-                          <SelectValue placeholder="Select a template..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {templates.map((template) => (
-                            <SelectItem key={template.id} value={template.id}>
-                              {template.name}
-                              {template.is_default && ' (Default)'}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {selectedTemplate && (
-                        <p className="text-xs text-muted-foreground">
-                          Type: {TEMPLATE_TYPE_LABELS[selectedTemplate.template_type] || selectedTemplate.template_type}
-                        </p>
-                      )}
+                        {template.name}
+                        {template.is_default && ' *'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="glass-panel rounded-2xl p-4 flex justify-between items-center border border-border/50">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-5 h-5 flex items-center justify-center">
+                      {isGenerating && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-30" />}
+                      <span className={`relative inline-flex rounded-full h-2 w-2 ${isGenerating ? 'bg-primary' : 'bg-muted-foreground'}`} />
                     </div>
-                  )}
-                  
-                  <div className="space-y-2">
-                    <Label>Detail Level</Label>
-                    <Select value={detailLevel} onValueChange={(v: any) => setDetailLevel(v)}>
-                      <SelectTrigger data-testid="select-detail-level">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="brief">Brief</SelectItem>
-                        <SelectItem value="standard">Standard</SelectItem>
-                        <SelectItem value="detailed">Detailed</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div>
+                      <p className="text-sm font-medium">Processing Queue</p>
+                      <p className="text-xs text-muted-foreground">
+                        {isGenerating ? 'Generating document...' : 'Ready to generate'}
+                      </p>
+                    </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label>AI Adjustment Instructions</Label>
-                    <Textarea
-                      placeholder="Add specific instructions for AI refinement..."
-                      value={aiAdjustment}
-                      onChange={(e) => setAiAdjustment(e.target.value)}
-                      rows={3}
-                      data-testid="textarea-ai-adjustment"
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="append-mode">Append to existing plan</Label>
-                    <Switch
-                      id="append-mode"
-                      checked={appendMode}
-                      onCheckedChange={setAppendMode}
-                      disabled={!generatedPlan}
-                      data-testid="switch-append-mode"
-                    />
-                  </div>
-                  
-                  <Button
-                    onClick={handleValidateAndGenerate}
-                    disabled={isGenerating}
-                    className="w-full"
-                    data-testid="button-generate"
-                  >
+                </div>
+                
+                <button
+                  onClick={handleValidateAndGenerate}
+                  disabled={isGenerating}
+                  className="w-full relative group overflow-hidden rounded-xl p-[1px] shadow-[0_0_20px_rgba(19,236,200,0.3)] active:scale-[0.98] transition-all duration-200 disabled:opacity-50"
+                  data-testid="button-generate"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#13ecc8] via-[#0ebcb0] to-[#13ecc8] bg-[length:200%_200%] animate-pulse opacity-80 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative bg-background/90 dark:bg-[#0f1923] rounded-xl px-6 py-4 flex items-center justify-center gap-2 group-hover:bg-background/70 transition-colors">
                     {isGenerating ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
+                        <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                        <span className="font-semibold">Generating...</span>
                       </>
                     ) : (
                       <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Generate Document
+                        <Sparkles className="h-5 w-5 text-primary" />
+                        <span className="font-semibold">Generate Treatment Plan</span>
                       </>
                     )}
-                  </Button>
-                </CardContent>
-              </Card>
+                  </div>
+                </button>
+              </div>
 
               {showValidation && (
                 <ValidationScreen
@@ -904,6 +863,13 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
             </TabsContent>
           </main>
           </Tabs>
+
+        <FormatExportPanel
+          isOpen={showFormatPanel}
+          onClose={() => setShowFormatPanel(false)}
+          onExportPdf={handleDownloadPdf}
+          onPrint={() => window.print()}
+        />
 
         <BottomNav />
       </div>
