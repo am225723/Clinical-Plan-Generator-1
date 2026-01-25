@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Pre-Generation Review &amp; Validation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<script>tailwind.config = {darkMode: "class", theme: {extend: {colors: {primary: "#1588fb", "primary-dark": "#14B8A6", "background-light": "#f5f7f8", "background-dark": "#0f1923", "surface-dark": "#151e32", "surface-light": "#FFFFFF", "glass-dark": "rgba(30, 41, 59, 0.7)", "glass-light": "rgba(255, 255, 255, 0.8)", "accent-gradient-start": "#2DD4BF", "accent-gradient-end": "#0F766E"}, fontFamily: {display: "Inter", sans: ["Inter", "sans-serif"]}, borderRadius: {DEFAULT: "1rem", lg: "2rem", xl: "3rem", full: "9999px"}, boxShadow: {glow: "0 0 20px -5px rgba(45, 212, 191, 0.4)", glass: "0 8px 32px 0 rgba(0, 0, 0, 0.37)"}, backdropBlur: {xs: "2px"}}}};</script>
+<style>
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .glass-panel {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .glass-button {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  body.dark {
+    background-color: #0B1120;
+    color: #E2E8F0;
+  }
+  body {
+    min-height: max(884px, 100dvh);
+  }
+  @keyframes pulse-border {
+    0% { border-color: rgba(244, 63, 94, 0.3); }
+    50% { border-color: rgba(244, 63, 94, 0.8); }
+    100% { border-color: rgba(244, 63, 94, 0.3); }
+  }
+  .animate-border-pulse {
+    animation: pulse-border 2s infinite;
+  }
+  @keyframes gradient-xy {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .animate-gradient-xy {
+    background-size: 200% 200%;
+    animation: gradient-xy 6s ease infinite;
+  }
+</style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-sans text-gray-900 dark:text-gray-100 min-h-screen antialiased dark transition-colors duration-300 pb-24">
+<div class="max-w-md mx-auto min-h-screen relative flex flex-col">
+<header class="pt-12 pb-4 px-6 flex justify-between items-start bg-transparent z-10">
+<div class="flex items-center gap-3">
+<button class="glass-button w-10 h-10 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+<span class="material-icons-round text-xl">arrow_back</span>
+</button>
+<div>
+<h1 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">Review Data</h1>
+<p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Pre-Generation Check</p>
+</div>
+</div>
+<button class="glass-button w-10 h-10 rounded-full flex items-center justify-center text-amber-300 hover:text-amber-100 transition-colors shadow-lg shadow-amber-500/10">
+<span class="material-icons-round text-xl">light_mode</span>
+</button>
+</header>
+<main class="flex-1 px-4 space-y-6 overflow-y-auto hide-scrollbar pb-32">
+<section class="glass-panel dark:bg-surface-dark rounded-3xl p-6 relative overflow-hidden text-center">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col items-center">
+<div class="w-20 h-20 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 flex items-center justify-center shadow-lg relative mb-4">
+<svg class="w-20 h-20 absolute top-0 left-0 -rotate-90">
+<circle class="text-gray-800" cx="40" cy="40" fill="none" r="36" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-amber-500" cx="40" cy="40" fill="none" r="36" stroke="currentColor" stroke-dasharray="226" stroke-dashoffset="56" stroke-linecap="round" stroke-width="4"></circle>
+</svg>
+<span class="material-icons-round text-amber-500 text-3xl">fact_check</span>
+</div>
+<h2 class="text-xl font-bold text-white mb-1">Clinical Readiness Check</h2>
+<p class="text-gray-400 text-sm">Review missing details for the <span class="text-primary font-medium">Initial Evaluation</span> template.</p>
+</div>
+</section>
+<section class="space-y-4">
+<h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider pl-1 flex items-center gap-2">
+        Missing or Incomplete Info
+        <span class="bg-gray-800 text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full border border-gray-700">2 Items</span>
+</h3>
+<div class="glass-panel rounded-2xl p-0 overflow-hidden border-l-4 border-rose-500 animate-border-pulse shadow-lg shadow-rose-900/10">
+<div class="p-4 border-b border-gray-700/50 bg-rose-500/5">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 border border-rose-500/20">
+<span class="material-icons-round">medication</span>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-white">Medication History</h4>
+<p class="text-[10px] text-rose-400 font-bold tracking-wide mt-0.5">MISSING REQUIRED FIELD</p>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 bg-gray-900/40">
+<label class="block text-xs text-gray-400 mb-2">Input current medications to improve interactions check:</label>
+<div class="relative">
+<textarea class="w-full bg-black/20 border border-gray-700 rounded-xl p-3 text-sm text-gray-200 focus:ring-1 focus:ring-rose-500 focus:border-rose-500 placeholder-gray-600 resize-none h-24 transition-all" placeholder="E.g., Sertraline 50mg QD, Clonazepam 0.5mg PRN..."></textarea>
+<button class="absolute bottom-3 right-3 p-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-lg transition-colors">
+<span class="material-icons-round text-sm">add</span>
+</button>
+</div>
+</div>
+</div>
+<div class="glass-panel rounded-2xl p-0 overflow-hidden border-l-4 border-amber-500 shadow-lg shadow-amber-900/10">
+<div class="p-4 border-b border-gray-700/50 bg-amber-500/5">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/20">
+<span class="material-icons-round">psychology</span>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-white">Mental Status Exam</h4>
+<p class="text-[10px] text-amber-400 font-bold tracking-wide mt-0.5">INCOMPLETE DATA</p>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 bg-gray-900/40">
+<p class="text-xs text-gray-400 mb-2">Detailed thought process description is missing.</p>
+<div class="flex gap-2">
+<button class="flex-1 bg-black/20 hover:bg-black/40 border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-400 text-left transition-colors flex justify-between items-center group">
+<span>Add Details</span>
+<span class="material-icons-round text-gray-600 group-hover:text-amber-500 transition-colors">edit</span>
+</button>
+<button class="bg-black/20 hover:bg-black/40 border border-gray-700 rounded-xl px-3 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+<span class="material-icons-round">mic</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-transparent border border-primary/10 mt-2">
+<div class="p-1 rounded bg-primary/20">
+<span class="material-icons-round text-primary text-sm">auto_awesome</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-primary">AI Optimization Tip</p>
+<p class="text-xs text-gray-400 mt-1 leading-relaxed opacity-90">Providing this data now will improve the clinical accuracy of the generated treatment plan by approximately <span class="text-white font-medium">40%</span>.</p>
+</div>
+</div>
+<div class="pt-4 pb-8 flex flex-col gap-3">
+<button class="w-full relative group overflow-hidden rounded-xl p-[1px] shadow-glow transform active:scale-95 transition-all duration-200">
+<div class="absolute inset-0 bg-gradient-to-r from-primary via-teal-300 to-primary animate-gradient-xy opacity-80 group-hover:opacity-100 transition-opacity"></div>
+<div class="relative bg-gray-900 rounded-xl px-6 py-4 flex items-center justify-center gap-2 group-hover:bg-gray-800 transition-colors">
+<span class="material-icons-round text-primary animate-pulse">check_circle</span>
+<span class="text-white font-semibold tracking-wide">Proceed to Generation</span>
+</div>
+</button>
+<button class="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-300 transition-colors flex items-center justify-center gap-1">
+<span>Skip and Generate Anyway</span>
+<span class="material-icons-round text-xs">arrow_forward</span>
+</button>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 left-0 right-0 bg-surface-dark/95 backdrop-blur-xl border-t border-white/5 pb-6 pt-2 px-6 z-50 max-w-md mx-auto">
+<div class="flex justify-between items-center">
+<button class="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors w-12 group">
+<span class="material-icons-round text-2xl group-hover:scale-110 transition-transform">home</span>
+<span class="text-[10px] font-medium">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors w-12 group">
+<span class="material-icons-round text-2xl group-hover:scale-110 transition-transform">description</span>
+<span class="text-[10px] font-medium">Templates</span>
+</button>
+<div class="relative -top-6">
+<button class="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center shadow-glow shadow-primary/40 hover:scale-110 hover:-translate-y-1 transition-all duration-300 ring-4 ring-background-dark">
+<span class="material-icons-round text-2xl">auto_awesome</span>
+</button>
+</div>
+<button class="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors w-12 group">
+<span class="material-icons-round text-2xl group-hover:scale-110 transition-transform">people</span>
+<span class="text-[10px] font-medium">Patients</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors w-12 group">
+<span class="material-icons-round text-2xl group-hover:scale-110 transition-transform">settings</span>
+<span class="text-[10px] font-medium">Settings</span>
+</button>
+</div>
+</nav>
+</div>
+</body></html>

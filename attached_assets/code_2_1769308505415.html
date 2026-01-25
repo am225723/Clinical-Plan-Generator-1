@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Unified Note Editor &amp; Export Control</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {primary: "#1588fb", "background-light": "#f5f7f8", "background-dark": "#0f1923", "paper-dark": "#121e1d", "surface-glass": "rgba(18, 30, 29, 0.8)", "accent-teal": "#13ecda"}, fontFamily: {display: "Inter", serif: ["Merriweather", "serif"]}, boxShadow: {glass: "0 8px 32px 0 rgba(0, 0, 0, 0.37)", glow: "0 0 20px -5px rgba(19, 236, 218, 0.3)", "nav-glow": "0 -4px 20px -5px rgba(19, 236, 218, 0.1)"}, borderRadius: {DEFAULT: "1rem", lg: "2rem", xl: "3rem", full: "9999px"}}}};</script>
+<style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .material-symbols-outlined.filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .glass-panel {
+        background: rgba(22, 46, 43, 0.7);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .slider-track-glass {
+        background: linear-gradient(to right, rgba(19, 236, 218, 0.2), rgba(19, 236, 218, 0.05));
+    }
+</style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+</style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-gray-100 antialiased h-screen w-full overflow-hidden flex flex-col selection:bg-primary/30 selection:text-white">
+<header class="absolute top-0 z-40 w-full border-b border-gray-200 dark:border-white/5 bg-white/80 dark:bg-surface-glass backdrop-blur-xl transition-all">
+<div class="h-10 w-full"></div>
+<div class="flex items-center justify-between px-4 pb-3 pt-1">
+<div class="flex items-center gap-3 overflow-hidden flex-1">
+<button class="flex items-center justify-center rounded-full p-2 text-gray-600 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<div class="flex flex-col overflow-hidden min-w-0">
+<div class="flex items-center gap-2">
+<h2 class="truncate text-base font-bold text-gray-900 dark:text-white leading-tight">J. Doe</h2>
+<span class="text-[10px] font-bold tracking-wider text-gray-500 dark:text-gray-400 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-black/5 dark:border-white/5">ID: 9942</span>
+</div>
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[14px] text-teal-500">verified_user</span>
+<p class="truncate text-xs text-gray-600 dark:text-gray-300 font-medium">Douglas Zelisko, M.D.</p>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="flex items-center justify-center rounded-full w-10 h-10 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[22px] dark:hidden">light_mode</span>
+<span class="material-symbols-outlined text-[22px] hidden dark:inline">dark_mode</span>
+</button>
+<button class="relative flex items-center justify-center rounded-full w-10 h-10 text-teal-600 dark:text-primary bg-teal-50 dark:bg-primary/10 border border-teal-100 dark:border-primary/20 transition-all shadow-glow hover:bg-teal-100 dark:hover:bg-primary/20 active:scale-95" title="Format &amp; Export Settings">
+<span class="material-symbols-outlined text-[22px]">tune</span>
+<span class="absolute top-2 right-2.5 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(19,236,218,0.8)]"></span>
+</button>
+<button class="ml-1 rounded-full bg-primary px-4 py-2 text-sm font-bold text-[#102220] shadow-[0_0_15px_-3px_rgba(19,236,218,0.5)] hover:bg-primary/90 transition-all active:scale-95 border border-primary/50">
+                Finalize
+            </button>
+</div>
+</div>
+</header>
+<div class="fixed top-[110px] right-4 z-50 w-[280px] sm:w-[300px] animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-auto">
+<div class="glass-panel overflow-hidden rounded-2xl p-5 shadow-2xl shadow-black/50 ring-1 ring-white/10">
+<div class="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
+<h3 class="text-sm font-bold text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">tune</span>
+                Format &amp; Export
+            </h3>
+<button class="rounded-full p-1 text-gray-400 hover:bg-white/10 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="mb-5 space-y-4">
+<div class="space-y-2">
+<div class="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
+<span>Text Size</span>
+<span class="text-primary">12pt</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[16px] text-gray-500">text_decrease</span>
+<input class="h-1 flex-1 appearance-none rounded-full bg-white/10 accent-primary outline-none cursor-pointer" max="16" min="10" type="range" value="12"/>
+<span class="material-symbols-outlined text-[20px] text-gray-300">text_increase</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="space-y-1.5">
+<span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Line Height</span>
+<div class="flex rounded-lg bg-black/20 p-1 ring-1 ring-white/5">
+<button class="flex-1 rounded py-1 text-center text-gray-400 hover:bg-white/5 transition-all"><span class="material-symbols-outlined text-[16px]">density_small</span></button>
+<button class="flex-1 rounded bg-white/10 py-1 text-center text-white shadow-sm ring-1 ring-white/5"><span class="material-symbols-outlined text-[16px]">density_medium</span></button>
+</div>
+</div>
+<div class="space-y-1.5">
+<span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Weight</span>
+<div class="flex rounded-lg bg-black/20 p-1 ring-1 ring-white/5">
+<button class="flex-1 rounded py-1 text-center font-serif text-sm font-normal text-gray-400 hover:bg-white/5">Aa</button>
+<button class="flex-1 rounded bg-white/10 py-1 text-center font-serif text-sm font-bold text-white shadow-sm ring-1 ring-white/5">Aa</button>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-2 border-t border-white/5 mt-2">
+<button class="group relative flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[#0ebcb0] py-3 text-sm font-bold text-[#102220] shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:shadow-primary/40 active:scale-[0.98]">
+<span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+                Export to PDF
+            </button>
+<div class="mt-3 flex justify-center gap-4">
+<button class="text-xs font-medium text-gray-400 hover:text-white flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[14px]">print</span> Print
+                </button>
+<button class="text-xs font-medium text-gray-400 hover:text-white flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[14px]">share</span> Share
+                </button>
+</div>
+</div>
+</div>
+</div>
+<main class="flex-1 overflow-y-auto w-full relative z-0 scroll-smooth bg-background-light dark:bg-background-dark pt-[100px] pb-[280px]">
+<div class="mx-auto max-w-2xl px-4">
+<div class="relative min-h-[800px] rounded-t-xl bg-white dark:bg-paper-dark p-6 sm:p-10 shadow-2xl ring-1 ring-black/5 dark:ring-white/5 transition-colors duration-300">
+<div class="absolute top-10 right-10 opacity-[0.02] pointer-events-none select-none">
+<span class="material-symbols-outlined text-[100px] text-black dark:text-white">psychiatry</span>
+</div>
+<div class="space-y-8 font-serif text-gray-800 dark:text-[#e2e8f0]">
+<div class="border-b border-gray-200 dark:border-white/10 pb-6 flex justify-between items-start">
+<div>
+<h1 class="text-2xl sm:text-3xl font-bold leading-tight text-gray-900 dark:text-white tracking-tight">Psychiatric Evaluation</h1>
+<div class="mt-2 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs font-sans text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+<span>Oct 24, 2023</span>
+<span class="hidden sm:inline h-1 w-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+<span>Visit Type: Initial Consult</span>
+</div>
+</div>
+<div class="text-right">
+<div class="h-10 w-10 rounded-full bg-teal-500/10 flex items-center justify-center text-teal-500 dark:text-primary">
+<span class="material-symbols-outlined">medical_information</span>
+</div>
+</div>
+</div>
+<div class="group relative rounded-lg p-2 -mx-2 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+<h3 class="mb-2 text-base font-bold text-teal-600 dark:text-primary font-sans tracking-wide uppercase text-xs">History of Present Illness</h3>
+<div class="my-3 p-4 rounded-xl bg-gradient-to-br from-white to-gray-50 dark:from-white/5 dark:to-white/0 border border-black/5 dark:border-white/5 shadow-sm backdrop-blur-md ring-1 ring-white/20">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-teal-600 dark:text-primary">tune</span>
+<span class="text-[10px] font-sans font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">AI Detail Level</span>
+</div>
+<span class="text-[10px] font-sans font-bold text-gray-500 dark:text-gray-400 bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded-full border border-black/5 dark:border-white/5">Brief</span>
+</div>
+<input class="w-full h-1.5 bg-gray-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-teal-500 dark:accent-primary mb-2" max="3" min="1" step="1" type="range" value="1"/>
+<div class="flex justify-between px-0.5 font-sans">
+<span class="text-[9px] font-bold uppercase tracking-wider text-teal-600 dark:text-primary">Brief</span>
+<span class="text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Standard</span>
+<span class="text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Comprehensive</span>
+</div>
+</div>
+<p class="leading-7 text-base sm:text-lg text-gray-700 dark:text-gray-200">
+                        The patient reports persistent <span class="border-b border-dashed border-red-400 text-red-700 dark:text-red-200 bg-red-50 dark:bg-red-500/10 px-0.5 rounded-sm cursor-help" title="Severity High">insomnia</span> and decreased appetite over the last two weeks. Mood is described as 'low' and 'hopeless'. The patient notes that these symptoms have been interfering with their ability to concentrate at work.
+                    </p>
+</div>
+<div class="relative rounded-xl border-l-2 border-primary bg-teal-50/50 dark:bg-primary/[0.03] p-4 -mx-2 shadow-sm ring-1 ring-teal-900/5 dark:ring-white/5 my-6">
+<div class="absolute -top-10 left-0 flex items-center gap-1 rounded-full border border-gray-200 dark:border-white/10 bg-white dark:bg-[#1A2C2A]/95 p-1 shadow-xl backdrop-blur-md z-10 animate-in fade-in zoom-in-95 duration-200">
+<button class="rounded-full p-1.5 text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors"><span class="material-symbols-outlined text-[18px]">format_bold</span></button>
+<button class="rounded-full p-1.5 text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors"><span class="material-symbols-outlined text-[18px]">format_italic</span></button>
+<div class="w-px h-4 bg-gray-200 dark:bg-white/10 mx-1"></div>
+<button class="flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-[14px]">auto_fix_high</span>
+<span class="font-sans">Refine with AI</span>
+</button>
+</div>
+<h3 class="mb-2 text-base font-bold text-teal-600 dark:text-primary font-sans tracking-wide uppercase text-xs flex justify-between items-center">
+                        Mental Status Examination
+                        <span class="flex h-2 w-2 rounded-full bg-primary animate-pulse"></span>
+</h3>
+<div class="my-3 p-4 rounded-xl bg-gradient-to-br from-white to-gray-50 dark:from-white/5 dark:to-white/0 border border-black/5 dark:border-white/5 shadow-sm backdrop-blur-md ring-1 ring-white/20">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-teal-600 dark:text-primary">tune</span>
+<span class="text-[10px] font-sans font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">AI Detail Level</span>
+</div>
+<span class="text-[10px] font-sans font-bold text-teal-700 dark:text-primary bg-teal-100/50 dark:bg-primary/10 px-2 py-0.5 rounded-full border border-teal-200/30 dark:border-primary/20">Standard</span>
+</div>
+<input class="w-full h-1.5 bg-gray-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-teal-500 dark:accent-primary mb-2" max="3" min="1" step="1" type="range" value="2"/>
+<div class="flex justify-between px-0.5 font-sans">
+<span class="text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Brief</span>
+<span class="text-[9px] font-bold uppercase tracking-wider text-teal-600 dark:text-primary">Standard</span>
+<span class="text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Comprehensive</span>
+</div>
+</div>
+<p class="leading-7 text-base sm:text-lg outline-none text-gray-900 dark:text-gray-50" contenteditable="true">
+                        Patient is alert and oriented x3. Affect is blunted. Thought process is linear but slow. No evidence of auditory or visual hallucinations. <span class="bg-primary/50 text-transparent animate-pulse w-[2px] h-[1.2em] inline-block align-middle ml-0.5 rounded-full">|</span>
+</p>
+</div>
+<div class="group relative rounded-lg p-2 -mx-2 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+<h3 class="mb-2 text-base font-bold text-teal-600 dark:text-primary font-sans tracking-wide uppercase text-xs">Assessment &amp; Plan</h3>
+<div class="my-3 p-4 rounded-xl bg-gradient-to-br from-white to-gray-50 dark:from-white/5 dark:to-white/0 border border-black/5 dark:border-white/5 shadow-sm backdrop-blur-md ring-1 ring-white/20">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-teal-600 dark:text-primary">tune</span>
+<span class="text-[10px] font-sans font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">AI Detail Level</span>
+</div>
+<span class="text-[10px] font-sans font-bold text-teal-700 dark:text-primary bg-teal-100/50 dark:bg-primary/10 px-2 py-0.5 rounded-full border border-teal-200/30 dark:border-primary/20">Standard</span>
+</div>
+<input class="w-full h-1.5 bg-gray-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-teal-500 dark:accent-primary mb-2" max="3" min="1" step="1" type="range" value="2"/>
+<div class="flex justify-between px-0.5 font-sans">
+<span class="text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Brief</span>
+<span class="text-[9px] font-bold uppercase tracking-wider text-teal-600 dark:text-primary">Standard</span>
+<span class="text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Comprehensive</span>
+</div>
+</div>
+<p class="leading-7 text-base sm:text-lg text-gray-700 dark:text-gray-200">
+                        Major Depressive Disorder, Recurrent, Moderate. Plan to initiate SSRI therapy (Sertraline 50mg daily) and refer for Cognitive Behavioral Therapy (CBT). Follow up in 4 weeks.
+                    </p>
+</div>
+<div class="mt-16 border-t border-gray-200 dark:border-white/10 pt-8 flex flex-col gap-4">
+<div class="flex items-end justify-between">
+<div class="font-serif italic text-xl text-gray-600 dark:text-gray-400">
+                            Douglas Zelisko
+                        </div>
+<div class="h-16 w-16 opacity-10">
+<span class="material-symbols-outlined text-[64px]">verified</span>
+</div>
+</div>
+<div class="text-xs font-sans text-gray-400 dark:text-gray-500 uppercase tracking-wider flex justify-between">
+<p>Provider: Douglas Zelisko, M.D.</p>
+<p>Page 1 of 1</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<footer class="fixed bottom-[72px] left-0 z-50 w-full flex flex-col gap-3 pointer-events-none">
+<div class="absolute inset-0 top-10 bg-gradient-to-t from-background-light dark:from-background-dark via-background-light/95 dark:via-background-dark/95 to-transparent -z-10"></div>
+<div class="pointer-events-auto no-scrollbar flex w-full gap-2 overflow-x-auto px-4 pl-4 sm:justify-center pb-2">
+<button class="group flex shrink-0 items-center gap-1.5 rounded-full border border-teal-500/20 dark:border-primary/20 bg-white dark:bg-[#162e2b] pl-3 pr-4 py-2 text-xs font-bold text-teal-700 dark:text-primary shadow-lg shadow-black/5 dark:shadow-black/20 backdrop-blur-md transition-all hover:border-primary/50 hover:bg-teal-50 dark:hover:bg-[#162e2b] active:scale-95">
+<span class="material-symbols-outlined text-[16px] group-hover:rotate-12 transition-transform">auto_awesome</span>
+            Summarize HPI
+        </button>
+<button class="flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 dark:border-white/10 bg-white/60 dark:bg-white/5 pl-3 pr-4 py-2 text-xs font-medium text-gray-600 dark:text-gray-300 shadow-lg backdrop-blur-md transition-all hover:bg-white dark:hover:bg-white/10 hover:border-white/20 active:scale-95">
+<span class="material-symbols-outlined text-[16px]">spellcheck</span>
+            Fix Grammar
+        </button>
+<button class="flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 dark:border-white/10 bg-white/60 dark:bg-white/5 pl-3 pr-4 py-2 text-xs font-medium text-gray-600 dark:text-gray-300 shadow-lg backdrop-blur-md transition-all hover:bg-white dark:hover:bg-white/10 hover:border-white/20 active:scale-95">
+<span class="material-symbols-outlined text-[16px]">medication</span>
+            Interactions
+        </button>
+</div>
+<div class="pointer-events-auto px-4 w-full sm:max-w-2xl sm:mx-auto">
+<div class="relative flex items-center gap-2 rounded-[24px] border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-surface-glass p-1.5 shadow-2xl backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/5 transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 focus-within:bg-white dark:focus-within:bg-[#1a3330]">
+<button class="group flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-200 dark:hover:bg-white/10 hover:text-teal-600 dark:hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+</button>
+<input class="h-full w-full bg-transparent text-sm sm:text-base text-gray-900 dark:text-white placeholder-gray-500 outline-none border-none focus:ring-0 px-2 font-medium" placeholder="Ask AI to refine or dictate changes..." type="text"/>
+<button class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-[#102220] shadow-lg shadow-primary/20 hover:bg-primary/90 hover:scale-105 transition-all active:scale-95">
+<span class="material-symbols-outlined filled text-[20px]">arrow_upward</span>
+</button>
+</div>
+</div>
+</footer>
+<nav class="fixed bottom-0 z-[60] w-full border-t border-gray-200 dark:border-white/5 bg-white/90 dark:bg-[#0B1414]/95 backdrop-blur-xl pb-safe">
+<div class="flex justify-around items-center h-[72px] px-2 max-w-lg mx-auto">
+<button class="group flex flex-col items-center gap-1 p-2 text-gray-400 hover:text-teal-600 dark:hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">grid_view</span>
+<span class="text-[10px] font-bold">Dashboard</span>
+</button>
+<button class="group flex flex-col items-center gap-1 p-2 text-teal-600 dark:text-primary">
+<span class="material-symbols-outlined filled text-[24px]">edit_note</span>
+<span class="text-[10px] font-bold">Editor</span>
+</button>
+<button class="group relative flex flex-col items-center justify-center -mt-6">
+<div class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-[#102220] shadow-glow hover:scale-105 active:scale-95 transition-all ring-4 ring-background-light dark:ring-background-dark">
+<span class="material-symbols-outlined text-[28px]">add</span>
+</div>
+<span class="mt-1 text-[10px] font-bold text-gray-500 dark:text-gray-400">New</span>
+</button>
+<button class="group flex flex-col items-center gap-1 p-2 text-gray-400 hover:text-teal-600 dark:hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">history</span>
+<span class="text-[10px] font-bold">History</span>
+</button>
+<button class="group flex flex-col items-center gap-1 p-2 text-gray-400 hover:text-teal-600 dark:hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">person</span>
+<span class="text-[10px] font-bold">Profile</span>
+</button>
+</div>
+</nav>
+</body></html>

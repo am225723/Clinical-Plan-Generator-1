@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Clinical Generator Data Entry</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>tailwind.config = {darkMode: "class", theme: {extend: {colors: {primary: "#137fec", "primary-dark": "#14B8A6", "background-light": "#f6f7f8", "background-dark": "#101922", "surface-dark": "#151e32", "surface-light": "#FFFFFF", "glass-dark": "rgba(30, 41, 59, 0.7)", "glass-light": "rgba(255, 255, 255, 0.8)", "accent-gradient-start": "#2DD4BF", "accent-gradient-end": "#0F766E"}, fontFamily: {display: "Inter", sans: ["Inter", "sans-serif"]}, borderRadius: {DEFAULT: "1rem", lg: "2rem", xl: "3rem", full: "9999px"}, boxShadow: {glow: "0 0 20px -5px rgba(45, 212, 191, 0.4)", glass: "0 8px 32px 0 rgba(0, 0, 0, 0.37)", "nav-glow": "0 -10px 40px -10px rgba(45, 212, 191, 0.1)"}, backdropBlur: {xs: "2px"}, animation: {"gradient-xy": "gradient-xy 3s ease infinite"}, keyframes: {"gradient-xy": {"0%, 100%": {"background-size": "200% 200%", "background-position": "left center"}, "50%": {"background-size": "200% 200%", "background-position": "right center"}}}}}};</script>
+<style>
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .glass-panel {
+    background: rgba(21, 30, 50, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .glass-button {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) opacity(0.6);
+    cursor: pointer;
+  }.material-symbols-outlined {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-size: 24px; 
+    line-height: 1;
+  }
+  .material-symbols-outlined.icon-sm {
+    font-size: 20px;
+  }
+  .material-symbols-outlined.icon-xs {
+    font-size: 16px;
+  }
+  .material-symbols-outlined.icon-lg {
+    font-size: 28px;
+  }
+</style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-sans text-gray-900 dark:text-gray-100 min-h-screen antialiased dark transition-colors duration-300 pb-32">
+<div class="max-w-md mx-auto min-h-screen relative flex flex-col">
+<header class="pt-12 pb-2 px-6 flex justify-between items-center bg-transparent z-10">
+<div>
+<h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Patient Intake</h1>
+<p class="text-primary font-medium text-sm">New Clinical Entry</p>
+</div>
+<button class="glass-button w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors text-primary shadow-glow group">
+<span class="material-symbols-outlined group-hover:rotate-90 transition-transform duration-500">light_mode</span>
+</button>
+</header>
+<main class="flex-1 px-4 space-y-5 overflow-y-auto hide-scrollbar pb-32">
+<section class="glass-panel rounded-3xl p-5 shadow-glass relative overflow-hidden group">
+<div class="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex justify-between items-center mb-5 border-b border-gray-700/50 pb-3">
+<h2 class="text-lg font-semibold text-gray-100 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">edit_note</span>
+                    Patient Information
+                </h2>
+</div>
+<div class="grid grid-cols-2 gap-x-4 gap-y-5">
+<div class="col-span-1">
+<label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1">Client ID</label>
+<div class="relative">
+<input class="w-full bg-gray-900/60 border border-gray-700/50 rounded-xl px-3 py-3 text-sm text-white focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder-gray-600 transition-all shadow-inner font-mono tracking-wide" placeholder="Enter ID" type="text" value="123456789"/>
+</div>
+</div>
+<div class="col-span-1">
+<label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1 flex justify-between items-center">
+                        Patient Name
+                        <span class="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">AUTO</span>
+</label>
+<div class="w-full bg-surface-dark/40 border border-gray-700/30 rounded-xl px-3 py-3 text-sm text-gray-300 flex items-center justify-between select-none backdrop-blur-sm group/read">
+<span class="font-medium text-gray-200 truncate">Jane Doe</span>
+<span class="material-symbols-outlined icon-xs text-primary/40 group-hover/read:text-primary transition-colors">lock</span>
+</div>
+</div>
+<div class="col-span-1">
+<label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1">Date of Service</label>
+<div class="relative">
+<input class="w-full bg-gray-900/60 border border-gray-700/50 rounded-xl px-3 py-3 text-sm text-white focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder-gray-600 transition-all shadow-inner [color-scheme:dark]" type="date" value="2026-01-23"/>
+</div>
+</div>
+<div class="col-span-1">
+<label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1 flex justify-between items-center">
+                        Date of Birth
+                        <span class="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">AUTO</span>
+</label>
+<div class="w-full bg-surface-dark/40 border border-gray-700/30 rounded-xl px-3 py-3 text-sm text-gray-300 flex items-center justify-between select-none backdrop-blur-sm group/read">
+<span>05/15/1980</span>
+<span class="material-symbols-outlined icon-xs text-primary/40 group-hover/read:text-primary transition-colors">lock</span>
+</div>
+</div>
+<div class="col-span-2">
+<label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1">Appointment Type</label>
+<div class="relative group">
+<select class="w-full bg-gray-900/60 border border-gray-700/50 rounded-xl px-3 py-3 text-sm text-white focus:ring-2 focus:ring-primary/50 focus:border-primary appearance-none transition-all shadow-inner cursor-pointer hover:bg-gray-900/80 pr-10">
+<option>Initial Evaluation</option>
+<option>Follow-up</option>
+<option>Medication Management</option>
+<option>Psychotherapy</option>
+<option>Crisis Intervention</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">expand_more</span>
+</div>
+</div>
+</div>
+<div class="col-span-2 mt-1">
+<div class="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-gray-800/60 to-transparent border border-gray-700/30">
+<div class="flex items-center">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-3 border border-primary/20 shadow-glow">
+<span class="material-symbols-outlined text-primary text-lg">medical_services</span>
+</div>
+<div>
+<p class="text-[10px] text-gray-400 uppercase tracking-wide font-bold">Provider</p>
+<p class="text-sm font-semibold text-white">Douglas Zelisko, M.D.</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary/70">verified</span>
+</div>
+</div>
+</div>
+</section>
+<section class="space-y-4">
+<div class="flex justify-between items-end px-1">
+<h3 class="text-base font-semibold text-gray-200">Clinical Context</h3>
+<span class="text-xs text-gray-500">Step 2 of 4</span>
+</div>
+<div class="bg-surface-dark border border-white/5 p-1 rounded-xl flex relative">
+<div class="absolute left-1 top-1 bottom-1 w-[calc(33.33%-0.5rem)] bg-gray-700 rounded-lg shadow-sm transition-all duration-300 ease-out z-0"></div>
+<button class="flex-1 relative z-10 py-2.5 text-sm font-medium text-white text-center">Intake</button>
+<button class="flex-1 relative z-10 py-2.5 text-sm font-medium text-gray-400 text-center hover:text-gray-200 transition-colors">Session</button>
+<button class="flex-1 relative z-10 py-2.5 text-sm font-medium text-gray-400 text-center hover:text-gray-200 transition-colors">Scores</button>
+</div>
+<div class="glass-panel rounded-3xl p-5 shadow-glass border-t border-white/5">
+<h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Add Evidence Source</h4>
+<div class="grid grid-cols-4 gap-3 mb-5">
+<button class="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-gray-800/40 hover:bg-primary/10 hover:border-primary/30 border border-transparent transition-all group aspect-square">
+<span class="material-symbols-outlined text-primary text-2xl group-hover:scale-110 transition-transform">picture_as_pdf</span>
+<span class="text-[10px] font-medium text-gray-300">PDF</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-gray-800/40 hover:bg-primary/10 hover:border-primary/30 border border-transparent transition-all group aspect-square">
+<span class="material-symbols-outlined text-primary text-2xl group-hover:scale-110 transition-transform">description</span>
+<span class="text-[10px] font-medium text-gray-300">Text</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-gray-800/40 hover:bg-primary/10 hover:border-primary/30 border border-transparent transition-all group aspect-square">
+<span class="material-symbols-outlined text-primary text-2xl group-hover:scale-110 transition-transform">mic</span>
+<span class="text-[10px] font-medium text-gray-300">Audio</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-gray-800/40 hover:bg-primary/10 hover:border-primary/30 border border-transparent transition-all group aspect-square">
+<span class="material-symbols-outlined text-primary text-2xl group-hover:scale-110 transition-transform">videocam</span>
+<span class="text-[10px] font-medium text-gray-300">Video</span>
+</button>
+</div>
+<div class="relative">
+<textarea class="w-full bg-gray-900/50 border border-gray-700/50 rounded-2xl p-4 text-sm text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none h-32 transition-shadow leading-relaxed" placeholder="Paste intake form data or clinical notes..."></textarea>
+<div class="absolute bottom-2 right-2">
+<button class="p-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined icon-sm">content_paste</span>
+</button>
+</div>
+</div>
+<div class="mt-5 pt-4 border-t border-gray-700/50">
+<p class="text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wider">Attached Files (3)</p>
+<div class="flex space-x-3 overflow-x-auto hide-scrollbar pb-2">
+<div class="flex-shrink-0 w-40 bg-gray-800/40 rounded-xl p-2.5 border border-gray-700/50 flex items-center space-x-3 relative group hover:bg-gray-800/60 transition-colors">
+<div class="w-9 h-9 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500">
+<span class="material-symbols-outlined icon-sm">picture_as_pdf</span>
+</div>
+<div class="overflow-hidden">
+<p class="text-xs font-medium truncate text-gray-300">Referral.pdf</p>
+<p class="text-[10px] text-gray-500">2.4 MB</p>
+</div>
+<button class="absolute -top-1.5 -right-1.5 bg-gray-700 text-gray-300 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+<span class="material-symbols-outlined icon-xs">close</span>
+</button>
+</div>
+<div class="flex-shrink-0 w-40 bg-gray-800/40 rounded-xl p-2.5 border border-gray-700/50 flex items-center space-x-3 relative group hover:bg-gray-800/60 transition-colors">
+<div class="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
+<span class="material-symbols-outlined icon-sm">graphic_eq</span>
+</div>
+<div class="overflow-hidden">
+<p class="text-xs font-medium truncate text-gray-300">Session_01.mp3</p>
+<p class="text-[10px] text-gray-500">14 MB</p>
+</div>
+<button class="absolute -top-1.5 -right-1.5 bg-gray-700 text-gray-300 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+<span class="material-symbols-outlined icon-xs">close</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="glass-panel rounded-2xl p-4 flex justify-between items-center border border-gray-700/50 cursor-pointer hover:bg-white/5 transition-colors mb-24">
+<div class="flex items-center gap-3">
+<div class="relative w-5 h-5 flex items-center justify-center">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-30"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</div>
+<div>
+<p class="text-sm font-medium text-gray-200">Processing Queue</p>
+<p class="text-[10px] text-gray-400">Transcribing Audio...</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-gray-500 icon-sm">expand_more</span>
+</section>
+</main>
+<div class="fixed bottom-24 left-0 right-0 px-6 z-30 pointer-events-none flex justify-center max-w-md mx-auto">
+<button class="pointer-events-auto w-full relative group overflow-hidden rounded-2xl p-[1px] shadow-glow hover:shadow-[0_0_30px_rgba(45,212,191,0.6)] transition-all duration-500 transform hover:-translate-y-1">
+<div class="absolute inset-0 bg-gradient-to-r from-primary via-teal-200 to-primary animate-gradient-xy opacity-80 group-hover:opacity-100 transition-opacity"></div>
+<div class="relative bg-gray-900 rounded-2xl px-6 py-4 flex items-center justify-center gap-3 group-hover:bg-gray-800 transition-colors">
+<span class="material-symbols-outlined text-primary animate-pulse">auto_awesome</span>
+<span class="text-white font-bold tracking-wide text-sm">Generate Treatment Plan</span>
+</div>
+</button>
+</div>
+<nav class="fixed bottom-0 left-0 right-0 h-[88px] bg-[#0f1623]/80 backdrop-blur-xl border-t border-white/5 z-40 flex justify-between items-start pt-2 px-6 pb-6 max-w-md mx-auto shadow-nav-glow">
+<button class="flex flex-col items-center gap-1.5 p-2 w-16 group">
+<span class="material-symbols-outlined text-gray-400 group-hover:text-white transition-colors">home</span>
+<span class="text-[10px] font-medium text-gray-500 group-hover:text-gray-300">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1.5 p-2 w-16 group">
+<span class="material-symbols-outlined text-gray-400 group-hover:text-white transition-colors">dashboard</span>
+<span class="text-[10px] font-medium text-gray-500 group-hover:text-gray-300">Templates</span>
+</button>
+<div class="relative -top-8 group">
+<div class="absolute inset-0 bg-primary/30 rounded-full blur-xl group-hover:bg-primary/50 transition-all duration-500"></div>
+<button class="relative w-16 h-16 rounded-full bg-gradient-to-br from-primary to-teal-600 flex items-center justify-center shadow-[0_4px_20px_rgba(45,212,191,0.4)] border-[4px] border-background-dark text-white transform group-hover:scale-105 transition-all duration-300">
+<span class="material-symbols-outlined text-3xl">auto_awesome</span>
+</button>
+<span class="absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-[10px] font-bold text-primary tracking-wide opacity-0 group-hover:opacity-100 transition-opacity">CREATE</span>
+</div>
+<button class="flex flex-col items-center gap-1.5 p-2 w-16 group">
+<span class="material-symbols-outlined text-gray-400 group-hover:text-white transition-colors">group</span>
+<span class="text-[10px] font-medium text-gray-500 group-hover:text-gray-300">Patients</span>
+</button>
+<button class="flex flex-col items-center gap-1.5 p-2 w-16 group">
+<span class="material-symbols-outlined text-gray-400 group-hover:text-white transition-colors">settings</span>
+<span class="text-[10px] font-medium text-gray-500 group-hover:text-gray-300">Settings</span>
+</button>
+</nav>
+</div>
+</body></html>
