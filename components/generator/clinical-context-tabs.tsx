@@ -118,6 +118,7 @@ export function ClinicalContextTabs({
               onClick={handlePaste}
               className="p-1.5 rounded-lg bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
               title="Paste from clipboard"
+              aria-label="Paste from clipboard"
             >
               <Clipboard className="h-4 w-4" />
             </button>
