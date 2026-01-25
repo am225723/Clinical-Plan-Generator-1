@@ -90,8 +90,19 @@ export function ClinicalCalendar({ onGenerateForAppointment }: ClinicalCalendarP
   const handleGenerateNote = () => {
     if (!selectedAppointment) return;
     
+    const updatedAppointment = {
+      ...selectedAppointment,
+      attachedNote: noteText,
+    };
+    
+    setAppointments(prev => prev.map(apt => 
+      apt.id === selectedAppointment.id 
+        ? updatedAppointment
+        : apt
+    ));
+    
     if (onGenerateForAppointment) {
-      onGenerateForAppointment(selectedAppointment);
+      onGenerateForAppointment(updatedAppointment);
     }
     setIsDialogOpen(false);
   };
@@ -222,17 +233,27 @@ export function ClinicalCalendar({ onGenerateForAppointment }: ClinicalCalendarP
                   variant="outline"
                   className="flex-1"
                   onClick={handleSaveNote}
+                  data-testid="button-save-appointment-note"
                 >
                   Save Note
                 </Button>
                 <Button
                   className="flex-1 btn-gradient text-white"
                   onClick={handleGenerateNote}
+                  data-testid="button-generate-from-appointment"
                 >
                   <Sparkles className="h-4 w-4 mr-2" />
                   Generate Document
                 </Button>
               </div>
+              <button
+                onClick={() => setIsDialogOpen(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-muted transition-colors"
+                aria-label="Close dialog"
+                data-testid="button-close-appointment-dialog"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
             </div>
           )}
         </DialogContent>

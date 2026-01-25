@@ -526,12 +526,10 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                   patient_name: apt.patientName,
                   date_of_service: new Date().toISOString().split('T')[0],
                 });
-                if (apt.attachedNote) {
-                  setClinicalInputs({
-                    ...clinicalInputs,
-                    provider_notes: apt.attachedNote,
-                  });
-                }
+                setClinicalInputs({
+                  ...clinicalInputs,
+                  provider_notes: apt.attachedNote || `${apt.appointmentType} - ${apt.location}\n\n`,
+                });
                 setActiveTab('generate');
               }}
             />
