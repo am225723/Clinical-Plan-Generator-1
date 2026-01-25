@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { useSupabase } from '../_app';
 import { requireDoctor } from '@/lib/auth';
@@ -26,7 +26,7 @@ import { DocumentPreview } from '@/components/generator/document-preview';
 import { ValidationScreen } from '@/components/generator/validation-screen';
 import { FormatExportPanel } from '@/components/generator/format-export-panel';
 import { ClinicalContextTabs } from '@/components/generator/clinical-context-tabs';
-import { SlidersHorizontal, Check, Verified } from 'lucide-react';
+import { SlidersHorizontal, Check } from 'lucide-react';
 
 interface DocumentTemplate {
   id: string;
@@ -34,6 +34,10 @@ interface DocumentTemplate {
   template_type: string;
   ai_prompt: string;
   is_default: boolean;
+  pdf_config?: {
+    sections?: Array<{ id: string; name: string; required: boolean; order: number }>;
+    guardrails?: Array<{ id: string; name: string; enabled: boolean; description: string }>;
+  };
 }
 
 interface SavedDocument {
@@ -127,11 +131,98 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
   const [showValidation, setShowValidation] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [showFormatPanel, setShowFormatPanel] = useState(false);
+  const [formatSettings, setFormatSettings] = useState({
+    fontSize: 12,
+    lineHeight: 'normal' as 'compact' | 'normal',
+    fontWeight: 'normal' as 'normal' | 'bold',
+  });
+  const processedFileIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     loadSettings();
     loadTemplates();
   }, []);
+
+  useEffect(() => {
+    const pendingFiles = uploadedFiles.filter((file) => !processedFileIds.current.has(file.id));
+    if (pendingFiles.length === 0) return;
+
+    const processFiles = async () => {
+      for (const file of pendingFiles) {
+        let summary = `Attached ${file.type.toUpperCase()} file: ${file.name} (${Math.round(file.size / 1024)} KB)`;
+        if (file.type === 'text') {
+          try {
+            const text = await file.file.text();
+            summary += `\n${text}`;
+          } catch (error) {
+            summary += '\n[Unable to read text file contents]';
+          }
+        }
+        if (file.type === 'pdf') {
+          try {
+            const pdfText = await extractPdfText(file.file);
+            summary += `\n${pdfText}`;
+          } catch (error) {
+            summary += '\n[Unable to extract PDF text content]';
+          }
+        }
+        if (file.type === 'audio' || file.type === 'video') {
+          summary += '\n[Transcription pending: please paste transcript or summary manually.]';
+        }
+        setClinicalInputs((prev) => ({
+          ...prev,
+          provider_notes: `${prev.provider_notes || ''}\n\n${summary}`.trim(),
+        }));
+        processedFileIds.current.add(file.id);
+      }
+    };
+
+    void processFiles();
+  }, [uploadedFiles]);
+
+  const extractPdfText = async (file: File): Promise<string> => {
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf');
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjs.getDocument({ data: buffer }).promise;
+    const maxPages = Math.min(pdf.numPages, 5);
+    let text = '';
+    for (let pageNum = 1; pageNum <= maxPages; pageNum += 1) {
+      const page = await pdf.getPage(pageNum);
+      const content = await page.getTextContent();
+      const pageText = content.items.map((item: any) => item.str).join(' ');
+      text += `${pageText}\n`;
+    }
+    return text.trim();
+  };
+
+  const buildPrompt = (basePrompt?: string | null, template?: DocumentTemplate | null) => {
+    let prompt = basePrompt || '';
+    const sections = template?.pdf_config?.sections || [];
+    const guardrails = template?.pdf_config?.guardrails || [];
+
+    if (sections.length > 0) {
+      const ordered = [...sections].sort((a, b) => a.order - b.order);
+      const sectionLines = ordered.map((section) => `- ${section.name}${section.required ? ' (required)' : ''}`).join('\n');
+      prompt += `\n\nSECTION ORDERING:\n${sectionLines}\n`;
+    }
+
+    const enabledGuardrails = guardrails.filter((guardrail) => guardrail.enabled);
+    if (enabledGuardrails.length > 0) {
+      const guardrailLines = enabledGuardrails
+        .map((guardrail) => `- ${guardrail.name}: ${guardrail.description}`)
+        .join('\n');
+      prompt += `\nGUARDRAILS:\n${guardrailLines}\n`;
+    }
+
+    return prompt.trim();
+  };
+
+  const getSectionOrder = (template?: DocumentTemplate | null) => {
+    if (!template?.pdf_config?.sections) return null;
+    return [...template.pdf_config.sections]
+      .sort((a, b) => a.order - b.order)
+      .map((section) => section.name);
+  };
 
   useEffect(() => {
     const tab = router.query.tab as string;
@@ -247,8 +338,41 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
 
   const planToMarkdown = (plan: any): string => {
     if (!plan) return '';
+    const sectionOrder = getSectionOrder(selectedTemplate);
+    const normalizedMap: Record<string, string> = {
+      'patient demographics': 'patient_demographics',
+      'chief complaint': 'chief_complaint',
+      'history of present illness': 'hpi',
+      'mental status exam': 'mse',
+      'assessment & diagnosis': 'diagnosis',
+      'assessment and diagnosis': 'diagnosis',
+      'treatment plan': 'treatment_goals',
+      'recommendations': 'recommendations',
+      'medical decision making': 'medical_decision_making',
+      'risk assessment': 'risk_assessment',
+    };
+    const entries = Object.entries(plan);
+    const orderedEntries: [string, any][] = [];
+    const usedKeys = new Set<string>();
+
+    if (sectionOrder) {
+      sectionOrder.forEach((section) => {
+        const key = normalizedMap[section.toLowerCase()];
+        if (!key) return;
+        const entry = entries.find(([entryKey]) => entryKey === key);
+        if (entry) {
+          orderedEntries.push(entry);
+          usedKeys.add(entry[0]);
+        }
+      });
+    }
+
+    entries.forEach((entry) => {
+      if (!usedKeys.has(entry[0])) orderedEntries.push(entry);
+    });
+
     let md = '';
-    Object.entries(plan).forEach(([key, value]) => {
+    orderedEntries.forEach(([key, value]) => {
       if (!value) return;
       const title = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
       md += `## ${title}\n\n`;
@@ -285,6 +409,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
     if (!editableContent) return;
     setIsGenerating(true);
     try {
+      const customPrompt = buildPrompt(selectedTemplate?.ai_prompt, selectedTemplate);
       const response = await fetch('/api/generate-treatment-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -295,7 +420,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
           aiAdjustment: instruction,
           appendMode: true,
           existingPlan: generatedPlan,
-          customPrompt: selectedTemplate?.ai_prompt,
+          customPrompt,
           templateType: selectedTemplate?.template_type || 'treatment_plan',
         }),
       });
@@ -315,6 +440,10 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
     setIsGenerating(true);
     try {
       const appSettings = await getAppSettings(supabase);
+      const customPrompt = buildPrompt(
+        selectedTemplate?.ai_prompt || appSettings?.treatment_plan_prompt,
+        selectedTemplate
+      );
       const response = await fetch('/api/generate-treatment-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -325,7 +454,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
           aiAdjustment,
           appendMode: false,
           existingPlan: null,
-          customPrompt: selectedTemplate?.ai_prompt || appSettings?.treatment_plan_prompt,
+          customPrompt,
           templateType: selectedTemplate?.template_type || 'treatment_plan',
         }),
       });
@@ -395,7 +524,10 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
     try {
       const appSettings = await getAppSettings(supabase);
       
-      const customPrompt = selectedTemplate?.ai_prompt || appSettings?.treatment_plan_prompt;
+      const customPrompt = buildPrompt(
+        selectedTemplate?.ai_prompt || appSettings?.treatment_plan_prompt,
+        selectedTemplate
+      );
       
       const response = await fetch('/api/generate-treatment-plan', {
         method: 'POST',
@@ -448,6 +580,9 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
     setIsDownloading(true);
 
     try {
+      const lineHeightValue = formatSettings.lineHeight === 'compact' ? 1.2 : 1.5;
+      const sectionOrder = getSectionOrder(selectedTemplate);
+      const guardrails = selectedTemplate?.pdf_config?.guardrails || [];
       const response = await fetch('/api/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -455,6 +590,13 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
           patientData,
           treatmentPlan: generatedPlan,
           doctorSettings,
+          formatOverrides: {
+            font_size: formatSettings.fontSize,
+            line_height: lineHeightValue,
+            font_weight: formatSettings.fontWeight,
+          },
+          sectionOrder,
+          guardrails,
         }),
       });
 
@@ -484,6 +626,68 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleViewPdf = async () => {
+    if (!validatePatientData()) {
+      toast({
+        title: 'Missing Required Fields',
+        description: 'Please fill in all required patient information before viewing',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const lineHeightValue = formatSettings.lineHeight === 'compact' ? 1.2 : 1.5;
+      const sectionOrder = getSectionOrder(selectedTemplate);
+      const guardrails = selectedTemplate?.pdf_config?.guardrails || [];
+      const response = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientData,
+          treatmentPlan: generatedPlan,
+          doctorSettings,
+          formatOverrides: {
+            font_size: formatSettings.fontSize,
+            line_height: lineHeightValue,
+            font_weight: formatSettings.fontWeight,
+          },
+          sectionOrder,
+          guardrails,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate PDF preview');
+      }
+
+      const previewWindow = window.open('', '_blank');
+      if (previewWindow) {
+        previewWindow.document.write(data.html);
+        previewWindow.document.close();
+      }
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Clinical Document',
+          text: editableContent || 'Clinical document generated.',
+        });
+      } else {
+        await navigator.clipboard.writeText(editableContent || '');
+        toast({ title: 'Copied', description: 'Document content copied to clipboard.' });
+      }
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Unable to share document', variant: 'destructive' });
     }
   };
 
@@ -793,6 +997,58 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                     </div>
                   </div>
                 </div>
+
+                <div className="glass-panel rounded-2xl p-4 space-y-4 border border-border/50">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      AI Generation Settings
+                    </Label>
+                    <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
+                      {detailLevel}
+                    </Badge>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="detail_level">Detail Level</Label>
+                      <Select
+                        value={detailLevel}
+                        onValueChange={(value) => setDetailLevel(value as 'brief' | 'standard' | 'detailed')}
+                      >
+                        <SelectTrigger id="detail_level">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="brief">Brief</SelectItem>
+                          <SelectItem value="standard">Standard</SelectItem>
+                          <SelectItem value="detailed">Detailed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="append_mode">Append Mode</Label>
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          id="append_mode"
+                          checked={appendMode}
+                          onCheckedChange={setAppendMode}
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          Enhance existing plan instead of overwriting
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ai_adjustment">AI Adjustment Prompt</Label>
+                    <Textarea
+                      id="ai_adjustment"
+                      value={aiAdjustment}
+                      onChange={(e) => setAiAdjustment(e.target.value)}
+                      placeholder="Add extra instructions to guide the AI output..."
+                      className="min-h-[90px] bg-card/50 dark:bg-card/20 border-border rounded-xl"
+                    />
+                  </div>
+                </div>
                 
                 <button
                   onClick={handleValidateAndGenerate}
@@ -836,7 +1092,13 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                     dateOfService={patientData.date_of_service || new Date().toISOString()}
                     providerName={patientData.provider_name}
                     templateType={selectedTemplate?.template_type || 'treatment_plan'}
+                    formatSettings={{
+                      fontSize: formatSettings.fontSize,
+                      lineHeight: formatSettings.lineHeight === 'compact' ? 1.2 : 1.5,
+                      fontWeight: formatSettings.fontWeight,
+                    }}
                     onPrint={() => handleDownloadPdf()}
+                    onViewPdf={handleViewPdf}
                     onDownload={handleDownloadPdf}
                     onEdit={() => setShowPreview(false)}
                     onSave={handleSaveDocument}
@@ -882,6 +1144,13 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
           onClose={() => setShowFormatPanel(false)}
           onExportPdf={handleDownloadPdf}
           onPrint={() => window.print()}
+          onShare={handleShare}
+          textSize={formatSettings.fontSize}
+          lineHeight={formatSettings.lineHeight}
+          fontWeight={formatSettings.fontWeight}
+          onTextSizeChange={(value) => setFormatSettings((prev) => ({ ...prev, fontSize: value }))}
+          onLineHeightChange={(value) => setFormatSettings((prev) => ({ ...prev, lineHeight: value }))}
+          onFontWeightChange={(value) => setFormatSettings((prev) => ({ ...prev, fontWeight: value }))}
         />
 
         <BottomNav />

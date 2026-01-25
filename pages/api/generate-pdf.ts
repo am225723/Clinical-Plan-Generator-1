@@ -13,6 +13,8 @@ interface PatientData {
 interface TreatmentPlan {
   chief_complaint?: string;
   hpi?: string;
+  mse?: string[] | string;
+  risk_assessment?: { level?: string; justification?: string } | string;
   diagnosis?: Array<{ code: string; name: string }>;
   treatment_goals?: Array<{ goal: string; objectives?: string[] }>;
   recommendations?: string;
@@ -32,10 +34,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { patientData, treatmentPlan, doctorSettings } = req.body as {
+    const { patientData, treatmentPlan, doctorSettings, formatOverrides, sectionOrder, guardrails } = req.body as {
       patientData: PatientData;
       treatmentPlan: TreatmentPlan;
       doctorSettings: any;
+      formatOverrides?: {
+        font_size?: number;
+        line_height?: number;
+        font_weight?: 'normal' | 'bold';
+      };
+      sectionOrder?: string[];
+      guardrails?: Array<{ name: string; enabled: boolean; description: string }>;
     };
 
     const requiredFields: (keyof PatientData)[] = [
@@ -52,7 +61,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const html = generatePdfHtml(patientData, treatmentPlan, doctorSettings);
+    const html = generatePdfHtml(
+      patientData,
+      treatmentPlan,
+      doctorSettings,
+      formatOverrides,
+      sectionOrder,
+      guardrails
+    );
     
     return res.status(200).json({ 
       html,
@@ -67,12 +83,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 function generatePdfHtml(
   patientData: PatientData, 
   treatmentPlan: TreatmentPlan, 
-  doctorSettings: any
+  doctorSettings: any,
+  formatOverrides?: {
+    font_size?: number;
+    line_height?: number;
+    font_weight?: 'normal' | 'bold';
+  },
+  sectionOrder?: string[],
+  guardrails?: Array<{ name: string; enabled: boolean; description: string }>
 ): string {
   const headerConfig = doctorSettings?.header_config || { text: '', alignment: 'center' };
   const footerConfig = doctorSettings?.footer_config || { text: '', alignment: 'center' };
   const pdfStyle = doctorSettings?.pdf_style || { font_size: 12, font_family: 'Arial' };
   const logoUrl = doctorSettings?.logo_url || '';
+  const resolvedFontSize = formatOverrides?.font_size ?? pdfStyle.font_size ?? 12;
+  const resolvedLineHeight = formatOverrides?.line_height ?? 1.5;
+  const resolvedFontWeight = formatOverrides?.font_weight ?? 'normal';
+  const orderedSections = Array.isArray(sectionOrder) && sectionOrder.length > 0 ? sectionOrder : null;
+
+  const enabledGuardrails = (guardrails || []).filter((guardrail) => guardrail.enabled);
 
   return `
 <!DOCTYPE html>
@@ -86,11 +115,12 @@ function generatePdfHtml(
     }
     body {
       font-family: ${pdfStyle.font_family}, sans-serif;
-      font-size: ${pdfStyle.font_size}pt;
-      line-height: 1.5;
+      font-size: ${resolvedFontSize}pt;
+      line-height: ${resolvedLineHeight};
       margin: 0;
       padding: 20px 40px;
       color: #333;
+      font-weight: ${resolvedFontWeight};
     }
     .header {
       text-align: ${headerConfig.alignment};
@@ -212,37 +242,113 @@ function generatePdfHtml(
     </div>
   </div>
 
-  ${treatmentPlan.chief_complaint ? `
+  ${renderTreatmentPlanSections(treatmentPlan, orderedSections)}
+
+  ${enabledGuardrails.length > 0 ? `
+  <div class="section">
+    <div class="section-title">Clinical Guardrails</div>
+    <ul>
+      ${enabledGuardrails.map((guardrail) => `<li><strong>${guardrail.name}:</strong> ${guardrail.description}</li>`).join('')}
+    </ul>
+  </div>
+  ` : ''}
+
+  <div class="footer">
+    ${footerConfig.text || `Generated on ${new Date().toLocaleDateString()}`}
+  </div>
+</body>
+</html>
+  `;
+}
+
+function renderTreatmentPlanSections(treatmentPlan: TreatmentPlan, sectionOrder: string[] | null): string {
+  const sections = [
+    {
+      key: 'Chief Complaint',
+      value: treatmentPlan.chief_complaint,
+      render: (value: string) => `
   <div class="section">
     <div class="section-title">Chief Complaint</div>
-    <p>${treatmentPlan.chief_complaint}</p>
+    <p>${value}</p>
   </div>
-  ` : ''}
-
-  ${treatmentPlan.hpi ? `
+  `,
+    },
+    {
+      key: 'Mental Status Exam',
+      value: treatmentPlan.mse,
+      render: () => {
+        if (Array.isArray(treatmentPlan.mse)) {
+          return `
+  <div class="section">
+    <div class="section-title">Mental Status Exam</div>
+    <ul>
+      ${treatmentPlan.mse.map((item) => `<li>${item}</li>`).join('')}
+    </ul>
+  </div>
+  `;
+        }
+        return `
+  <div class="section">
+    <div class="section-title">Mental Status Exam</div>
+    <p>${treatmentPlan.mse}</p>
+  </div>
+  `;
+      },
+    },
+    {
+      key: 'Risk Assessment',
+      value: treatmentPlan.risk_assessment,
+      render: () => {
+        if (typeof treatmentPlan.risk_assessment === 'string') {
+          return `
+  <div class="section">
+    <div class="section-title">Risk Assessment</div>
+    <p>${treatmentPlan.risk_assessment}</p>
+  </div>
+  `;
+        }
+        return `
+  <div class="section">
+    <div class="section-title">Risk Assessment</div>
+    <p><strong>Level:</strong> ${treatmentPlan.risk_assessment?.level || 'N/A'}</p>
+    <p><strong>Justification:</strong> ${treatmentPlan.risk_assessment?.justification || 'N/A'}</p>
+  </div>
+  `;
+      },
+    },
+    {
+      key: 'History of Present Illness',
+      value: treatmentPlan.hpi,
+      render: (value: string) => `
   <div class="section">
     <div class="section-title">History of Present Illness</div>
-    <p>${treatmentPlan.hpi}</p>
+    <p>${value}</p>
   </div>
-  ` : ''}
-
-  ${treatmentPlan.diagnosis && treatmentPlan.diagnosis.length > 0 ? `
+  `,
+    },
+    {
+      key: 'Diagnosis',
+      value: treatmentPlan.diagnosis,
+      render: () => `
   <div class="section">
     <div class="section-title">Diagnosis</div>
     <ul class="diagnosis-list">
-      ${treatmentPlan.diagnosis.map(d => `
+      ${treatmentPlan.diagnosis?.map(d => `
         <li class="diagnosis-item">
           <span class="diagnosis-code">${d.code}</span> - ${d.name}
         </li>
       `).join('')}
     </ul>
   </div>
-  ` : ''}
-
-  ${treatmentPlan.treatment_goals && treatmentPlan.treatment_goals.length > 0 ? `
+  `,
+    },
+    {
+      key: 'Treatment Goals',
+      value: treatmentPlan.treatment_goals,
+      render: () => `
   <div class="section">
     <div class="section-title">Treatment Goals</div>
-    ${treatmentPlan.treatment_goals.map((g, i) => `
+    ${treatmentPlan.treatment_goals?.map((g, i) => `
       <div class="goal-card">
         <div class="goal-title">Goal ${i + 1}: ${g.goal}</div>
         ${g.objectives && g.objectives.length > 0 ? `
@@ -253,26 +359,47 @@ function generatePdfHtml(
       </div>
     `).join('')}
   </div>
-  ` : ''}
-
-  ${treatmentPlan.recommendations ? `
+  `,
+    },
+    {
+      key: 'Recommendations',
+      value: treatmentPlan.recommendations,
+      render: (value: string) => `
   <div class="section">
     <div class="section-title">Recommendations</div>
-    <p>${treatmentPlan.recommendations}</p>
+    <p>${value}</p>
   </div>
-  ` : ''}
-
-  ${treatmentPlan.medical_decision_making ? `
+  `,
+    },
+    {
+      key: 'Medical Decision Making',
+      value: treatmentPlan.medical_decision_making,
+      render: (value: string) => `
   <div class="section">
     <div class="section-title">Medical Decision Making</div>
-    <p>${treatmentPlan.medical_decision_making}</p>
+    <p>${value}</p>
   </div>
-  ` : ''}
+  `,
+    },
+  ];
 
-  <div class="footer">
-    ${footerConfig.text || `Generated on ${new Date().toLocaleDateString()}`}
-  </div>
-</body>
-</html>
-  `;
+  const aliasMap: Record<string, string> = {
+    'assessment & diagnosis': 'Diagnosis',
+    'assessment and diagnosis': 'Diagnosis',
+    'mental status exam': 'Mental Status Exam',
+  };
+  const ordered = sectionOrder
+    ? sectionOrder
+        .map((label) => {
+          const normalized = label.toLowerCase();
+          const mapped = aliasMap[normalized] || label;
+          return sections.find((section) => section.key.toLowerCase() === mapped.toLowerCase());
+        })
+        .filter(Boolean)
+    : sections;
+
+  return ordered
+    .filter((section) => section && section.value)
+    .map((section) => section!.render(section!.value as any))
+    .join('\n');
 }

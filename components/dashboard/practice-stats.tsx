@@ -14,21 +14,37 @@ interface DashboardStats {
   topIcdCodes: IcdCode[];
 }
 
-const mockStats: DashboardStats = {
-  pendingNotesCount: 7,
-  documentsThisWeek: 12,
-  documentsThisMonth: 48,
-  topIcdCodes: [
-    { code: 'F32.1', description: 'Major depressive disorder, single episode, moderate', count: 24 },
-    { code: 'F41.1', description: 'Generalized anxiety disorder', count: 18 },
-    { code: 'F43.10', description: 'PTSD, unspecified', count: 15 },
-    { code: 'F90.9', description: 'ADHD, unspecified type', count: 12 },
-    { code: 'F31.9', description: 'Bipolar disorder, unspecified', count: 8 },
-  ],
-};
-
 export function PracticeStats() {
-  const [stats, setStats] = useState<DashboardStats>(mockStats);
+  const [stats, setStats] = useState<DashboardStats>({
+    pendingNotesCount: 0,
+    documentsThisWeek: 0,
+    documentsThisMonth: 0,
+    topIcdCodes: [],
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/dashboard/summary');
+        if (!response.ok) throw new Error('Failed to load stats');
+        const data = await response.json();
+        setStats({
+          pendingNotesCount: data.pendingNotesCount ?? 0,
+          documentsThisWeek: data.documentsThisWeek ?? 0,
+          documentsThisMonth: data.documentsThisMonth ?? 0,
+          topIcdCodes: data.topIcdCodes ?? [],
+        });
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchStats();
+  }, []);
 
   const statCards = [
     {
@@ -67,7 +83,7 @@ export function PracticeStats() {
       <div className="flex items-baseline justify-between">
         <h3 className="text-foreground text-lg font-bold tracking-tight">Practice Overview</h3>
         <span className="text-primary text-sm font-semibold cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1">
-          View Report
+          {loading ? 'Loading...' : 'View Report'}
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>

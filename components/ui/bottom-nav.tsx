@@ -21,6 +21,7 @@ export function BottomNav({ onGenerateClick }: BottomNavProps) {
   ];
 
   const rightNavItems: NavItem[] = [
+    { icon: <Users className="h-6 w-6" />, label: 'Patients', href: '/patients' },
     { icon: <History className="h-6 w-6" />, label: 'History', href: '/doctor', tab: 'history' },
     { icon: <Settings className="h-6 w-6" />, label: 'Settings', href: '/settings' },
   ];

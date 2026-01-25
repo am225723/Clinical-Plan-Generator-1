@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Printer, Download, Share2, Eye, EyeOff, Edit3 } from 'lucide-react';
+import { FileText, Printer, Download, Eye, EyeOff, Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -9,8 +9,14 @@ interface DocumentPreviewProps {
   dateOfService: string;
   providerName: string;
   templateType: string;
+  formatSettings?: {
+    fontSize: number;
+    lineHeight: number;
+    fontWeight: 'normal' | 'bold';
+  };
   onPrint: () => void;
   onDownload: () => void;
+  onViewPdf: () => void;
   onEdit: () => void;
   onSave: () => void;
   isSaving: boolean;
@@ -31,8 +37,10 @@ export function DocumentPreview({
   dateOfService,
   providerName,
   templateType,
+  formatSettings,
   onPrint,
   onDownload,
+  onViewPdf,
   onEdit,
   onSave,
   isSaving,
@@ -118,8 +126,13 @@ export function DocumentPreview({
                 </div>
               </div>
 
-              <div 
+              <div
                 className="prose prose-sm dark:prose-invert max-w-none text-foreground"
+                style={{
+                  fontSize: formatSettings ? `${formatSettings.fontSize}px` : undefined,
+                  lineHeight: formatSettings ? formatSettings.lineHeight : undefined,
+                  fontWeight: formatSettings?.fontWeight,
+                }}
                 dangerouslySetInnerHTML={{ __html: formatMarkdownToHtml(content) }}
               />
 
@@ -140,6 +153,15 @@ export function DocumentPreview({
               >
                 <Printer className="h-4 w-4" />
                 Print
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onViewPdf}
+                className="gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                View PDF
               </Button>
               <Button
                 variant="outline"
