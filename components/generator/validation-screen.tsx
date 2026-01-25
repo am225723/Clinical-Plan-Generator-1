@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle, Pill, Brain, Sparkles, ChevronRight, SkipForward, Mic } from 'lucide-react';
+import { AlertCircle, Pill, Brain, Sparkles, ChevronRight, SkipForward, Mic, FileText, ClipboardList, StickyNote, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -19,6 +19,39 @@ interface ValidationScreenProps {
   onFieldComplete: (field: string, value: string) => void;
 }
 
+const FIELD_CONFIG: Record<string, { icon: React.ReactNode; description: string; placeholder: string }> = {
+  'Intake Form': {
+    icon: <ClipboardList className="h-5 w-5" />,
+    description: 'Patient intake information and history',
+    placeholder: 'Enter patient intake details, demographics, chief complaint...',
+  },
+  'Session Transcript': {
+    icon: <MessageSquare className="h-5 w-5" />,
+    description: 'Session notes or transcript text',
+    placeholder: 'Paste session transcript or summary notes...',
+  },
+  'Assessment Scores': {
+    icon: <FileText className="h-5 w-5" />,
+    description: 'Clinical assessment scores and measures',
+    placeholder: 'E.g., PHQ-9: 14, GAD-7: 11, Columbia score: 2...',
+  },
+  'Provider Notes': {
+    icon: <StickyNote className="h-5 w-5" />,
+    description: 'Additional provider observations',
+    placeholder: 'Enter clinical observations, treatment notes...',
+  },
+  'Medication History': {
+    icon: <Pill className="h-5 w-5" />,
+    description: 'Current medications improve interactions check',
+    placeholder: 'E.g., Sertraline 50mg QD, Clonazepam 0.5mg PRN...',
+  },
+  'Mental Status': {
+    icon: <Brain className="h-5 w-5" />,
+    description: 'Detailed thought process description',
+    placeholder: 'Describe current mental status observations...',
+  },
+};
+
 export function ValidationScreen({
   missingFields,
   onProceed,
@@ -27,31 +60,22 @@ export function ValidationScreen({
 }: ValidationScreenProps) {
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
 
-  const validationItems: ValidationItem[] = [
-    {
-      id: 'medication_history',
-      title: 'Medication History',
-      severity: 'missing',
-      icon: <Pill className="h-5 w-5" />,
-      description: 'Current medications improve interactions check',
-      placeholder: 'E.g., Sertraline 50mg QD, Clonazepam 0.5mg PRN...',
-    },
-    {
-      id: 'mental_status',
-      title: 'Mental Status Exam',
-      severity: 'incomplete',
-      icon: <Brain className="h-5 w-5" />,
-      description: 'Detailed thought process description',
-      placeholder: 'Describe current mental status observations...',
-    },
-  ];
+  const validationItems: ValidationItem[] = missingFields.map((field) => {
+    const config = FIELD_CONFIG[field] || {
+      icon: <FileText className="h-5 w-5" />,
+      description: 'Required clinical information',
+      placeholder: `Enter ${field.toLowerCase()}...`,
+    };
+    return {
+      id: field,
+      title: field,
+      severity: 'missing' as const,
+      ...config,
+    };
+  });
 
-  const activeItems = validationItems.filter((item) =>
-    missingFields.some((f) => f.toLowerCase().includes(item.id.replace('_', ' ')))
-  );
-
-  const completedCount = missingFields.length - activeItems.length;
-  const totalCount = missingFields.length || 2;
+  const completedCount = Object.keys(fieldValues).filter(k => fieldValues[k]?.trim()).length;
+  const totalCount = missingFields.length || 1;
   const progressPercent = Math.round((completedCount / totalCount) * 100);
 
   if (missingFields.length === 0) {
@@ -99,12 +123,12 @@ export function ValidationScreen({
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           Missing or Incomplete Info
           <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full border border-border">
-            {activeItems.length} Items
+            {validationItems.length} Items
           </span>
         </h3>
 
-        {activeItems.length > 0 ? (
-          activeItems.map((item) => (
+        {validationItems.length > 0 ? (
+          validationItems.map((item: ValidationItem) => (
             <div
               key={item.id}
               className={`rounded-2xl overflow-hidden border-l-4 shadow-lg ${

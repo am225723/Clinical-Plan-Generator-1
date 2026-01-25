@@ -14,6 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ArrowLeft, Save, Loader2, Upload, FileText, Settings as SettingsIcon, Plus, Trash2, Edit, Copy } from 'lucide-react';
+import { TemplateList } from '@/components/templates/template-list';
+import { TemplateEditor } from '@/components/templates/template-editor';
 import { useToast } from '@/hooks/use-toast';
 
 interface DocumentTemplate {
@@ -135,6 +137,7 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
   const [templatesLoading, setTemplatesLoading] = useState(true);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<DocumentTemplate | null>(null);
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [templateForm, setTemplateForm] = useState({
     name: '',
     template_type: 'treatment_plan',
@@ -233,7 +236,7 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
       ai_prompt: template.ai_prompt,
       is_default: template.is_default,
     });
-    setTemplateDialogOpen(true);
+    setShowTemplateEditor(true);
   };
 
   const handleDeleteTemplate = async (id: string) => {
@@ -261,14 +264,81 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
   };
 
   const openNewTemplateDialog = () => {
-    setEditingTemplate(null);
-    setTemplateForm({
+    const newTemplate: DocumentTemplate = {
+      id: '',
       name: '',
       template_type: 'treatment_plan',
       ai_prompt: DEFAULT_PROMPTS.treatment_plan,
       is_default: false,
-    });
-    setTemplateDialogOpen(true);
+      pdf_config: {
+        sections: [
+          { id: 'hpi', name: 'History of Present Illness', required: true, order: 0 },
+          { id: 'mse', name: 'Mental Status Examination', required: true, order: 1 },
+          { id: 'assessment', name: 'Assessment & Plan', required: true, order: 2 },
+        ],
+        guardrails: [
+          { id: 'suicide_risk', name: 'Suicide Risk Detection', enabled: true, description: 'Flag ideation markers aggressively' },
+          { id: 'hipaa', name: 'HIPAA Compliance', enabled: true, description: 'Ensure PHI is properly handled' },
+          { id: 'icd10', name: 'ICD-10 Validation', enabled: true, description: 'Validate diagnostic codes' },
+        ],
+      },
+      created_at: new Date().toISOString(),
+    };
+    setEditingTemplate(newTemplate);
+    setShowTemplateEditor(true);
+  };
+
+  const handleSetDefault = async (templateId: string) => {
+    try {
+      const template = templates.find(t => t.id === templateId);
+      if (!template) return;
+      
+      const response = await fetch(`/api/templates/${templateId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...template, is_default: true }),
+      });
+
+      if (!response.ok) throw new Error('Failed to set default');
+      toast({ title: 'Success', description: 'Default template updated' });
+      loadTemplates();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to set default template', variant: 'destructive' });
+    }
+  };
+
+  const handleSaveFromEditor = async (template: any) => {
+    setSaving(true);
+    try {
+      const isNew = !template.id || template.id === '';
+      const method = isNew ? 'POST' : 'PUT';
+      const url = isNew ? '/api/templates' : `/api/templates/${template.id}`;
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: template.name,
+          template_type: template.template_type,
+          ai_prompt: template.ai_prompt,
+          is_default: template.is_default,
+          pdf_config: {
+            sections: template.sections,
+            guardrails: template.guardrails,
+          },
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save template');
+
+      toast({ title: 'Saved', description: 'Template saved successfully' });
+      setShowTemplateEditor(false);
+      setEditingTemplate(null);
+      loadTemplates();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to save template', variant: 'destructive' });
+    }
+    setSaving(false);
   };
 
   const handleSaveAiPrompt = async () => {
@@ -399,6 +469,30 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
             </TabsList>
 
             <TabsContent value="templates" className="mt-6">
+              {showTemplateEditor && editingTemplate ? (
+                <TemplateEditor
+                  template={{
+                    ...editingTemplate,
+                    sections: editingTemplate.pdf_config?.sections || [
+                      { id: 'hpi', name: 'History of Present Illness', required: true, order: 0 },
+                      { id: 'mse', name: 'Mental Status Examination', required: true, order: 1 },
+                      { id: 'assessment', name: 'Assessment & Plan', required: true, order: 2 },
+                    ],
+                    guardrails: editingTemplate.pdf_config?.guardrails || [
+                      { id: 'suicide_risk', name: 'Suicide Risk Detection', enabled: true, description: 'Flag ideation markers aggressively' },
+                      { id: 'hipaa', name: 'HIPAA Compliance', enabled: true, description: 'Ensure PHI is properly handled' },
+                      { id: 'icd10', name: 'ICD-10 Validation', enabled: true, description: 'Validate diagnostic codes' },
+                    ],
+                  }}
+                  onSave={handleSaveFromEditor}
+                  onCancel={() => {
+                    setShowTemplateEditor(false);
+                    setEditingTemplate(null);
+                  }}
+                  onDuplicate={handleDuplicateTemplate}
+                  isSaving={saving}
+                />
+              ) : (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
@@ -503,69 +597,24 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
                     </DialogContent>
                   </Dialog>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   {templatesLoading ? (
                     <div className="flex justify-center py-8">
                       <Loader2 className="h-6 w-6 animate-spin" />
                     </div>
-                  ) : templates.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No templates yet</p>
-                      <p className="text-sm">Create your first template to get started</p>
-                    </div>
                   ) : (
-                    <div className="space-y-3">
-                      {templates.map((template) => (
-                        <div
-                          key={template.id}
-                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50"
-                          data-testid={`template-item-${template.id}`}
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{template.name}</span>
-                              {template.is_default && (
-                                <Badge variant="secondary" className="text-xs">Default</Badge>
-                              )}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {TEMPLATE_TYPES.find(t => t.value === template.template_type)?.label || template.template_type}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDuplicateTemplate(template)}
-                              data-testid={`button-duplicate-${template.id}`}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditTemplate(template)}
-                              data-testid={`button-edit-${template.id}`}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteTemplate(template.id)}
-                              className="text-red-600 hover:text-red-700"
-                              data-testid={`button-delete-${template.id}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <TemplateList
+                      templates={templates}
+                      onEdit={handleEditTemplate}
+                      onDuplicate={handleDuplicateTemplate}
+                      onDelete={handleDeleteTemplate}
+                      onSetDefault={handleSetDefault}
+                      onCreate={openNewTemplateDialog}
+                    />
                   )}
                 </CardContent>
               </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="ai" className="mt-6">

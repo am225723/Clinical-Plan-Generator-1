@@ -21,6 +21,9 @@ import { PracticeStats } from '@/components/dashboard/practice-stats';
 import { ClinicalCalendar } from '@/components/dashboard/clinical-calendar';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { FileUpload, UploadedFile } from '@/components/generator/file-upload';
+import { NoteEditor } from '@/components/generator/note-editor';
+import { DocumentPreview } from '@/components/generator/document-preview';
+import { ValidationScreen } from '@/components/generator/validation-screen';
 
 interface DocumentTemplate {
   id: string;
@@ -115,6 +118,11 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [documentsTotal, setDocumentsTotal] = useState(0);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [editableContent, setEditableContent] = useState('');
+  const [editorDetailLevel, setEditorDetailLevel] = useState(50);
+  const [showPreview, setShowPreview] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
 
   useEffect(() => {
     loadSettings();
@@ -233,6 +241,102 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
     }
   };
 
+  const planToMarkdown = (plan: any): string => {
+    if (!plan) return '';
+    let md = '';
+    Object.entries(plan).forEach(([key, value]) => {
+      if (!value) return;
+      const title = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      md += `## ${title}\n\n`;
+      if (Array.isArray(value)) {
+        value.forEach((item: any) => {
+          if (typeof item === 'object') {
+            if (item.code && item.name) {
+              md += `- ${item.code} - ${item.name}\n`;
+            } else if (item.goal) {
+              md += `- **${item.goal}**\n`;
+              if (item.objectives) {
+                item.objectives.forEach((o: string) => md += `  - ${o}\n`);
+              }
+            } else {
+              md += `- ${JSON.stringify(item)}\n`;
+            }
+          } else {
+            md += `- ${String(item)}\n`;
+          }
+        });
+      } else if (typeof value === 'object') {
+        Object.entries(value as Record<string, any>).forEach(([k, v]) => {
+          md += `**${k.replace(/_/g, ' ')}:** ${String(v)}\n`;
+        });
+      } else {
+        md += `${String(value)}\n`;
+      }
+      md += '\n';
+    });
+    return md;
+  };
+
+  const handleRefine = async (instruction: string, detailLevel: number) => {
+    if (!editableContent) return;
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/generate-treatment-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inputs: { ...clinicalInputs, existing_content: editableContent },
+          patientData,
+          detailLevel: detailLevel <= 25 ? 'brief' : detailLevel <= 75 ? 'standard' : 'detailed',
+          aiAdjustment: instruction,
+          appendMode: true,
+          existingPlan: generatedPlan,
+          customPrompt: selectedTemplate?.ai_prompt,
+          templateType: selectedTemplate?.template_type || 'treatment_plan',
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to refine document');
+      const plan = await response.json();
+      setGeneratedPlan(plan);
+      setEditableContent(planToMarkdown(plan));
+      toast({ title: 'Success', description: 'Document refined successfully' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleRegenerate = async (detailLevel: number) => {
+    setIsGenerating(true);
+    try {
+      const appSettings = await getAppSettings(supabase);
+      const response = await fetch('/api/generate-treatment-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inputs: clinicalInputs,
+          patientData,
+          detailLevel: detailLevel <= 25 ? 'brief' : detailLevel <= 75 ? 'standard' : 'detailed',
+          aiAdjustment,
+          appendMode: false,
+          existingPlan: null,
+          customPrompt: selectedTemplate?.ai_prompt || appSettings?.treatment_plan_prompt,
+          templateType: selectedTemplate?.template_type || 'treatment_plan',
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to regenerate document');
+      const plan = await response.json();
+      setGeneratedPlan(plan);
+      setEditableContent(planToMarkdown(plan));
+      toast({ title: 'Success', description: 'Document regenerated successfully' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const validatePatientData = (): boolean => {
     const errors: ValidationErrors = {};
     
@@ -247,7 +351,41 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
     return Object.keys(errors).length === 0;
   };
 
+  const checkMissingFields = (): string[] => {
+    const missing: string[] = [];
+    if (!clinicalInputs.intake_form.trim()) missing.push('Intake Form');
+    if (!clinicalInputs.session_transcript.trim()) missing.push('Session Transcript');
+    if (!clinicalInputs.assessment_scores.trim()) missing.push('Assessment Scores');
+    if (!clinicalInputs.provider_notes.trim()) missing.push('Provider Notes');
+    return missing;
+  };
+
+  const handleValidateAndGenerate = () => {
+    const missing = checkMissingFields();
+    if (missing.length > 0) {
+      setMissingFields(missing);
+      setShowValidation(true);
+    } else {
+      handleGenerate();
+    }
+  };
+
+  const handleValidationComplete = (field: string, value: string) => {
+    const fieldMap: Record<string, keyof typeof clinicalInputs> = {
+      'Intake Form': 'intake_form',
+      'Session Transcript': 'session_transcript',
+      'Assessment Scores': 'assessment_scores',
+      'Provider Notes': 'provider_notes',
+    };
+    const key = fieldMap[field];
+    if (key) {
+      setClinicalInputs({ ...clinicalInputs, [key]: value });
+      setMissingFields(missingFields.filter(f => f !== field));
+    }
+  };
+
   const handleGenerate = async () => {
+    setShowValidation(false);
     setIsGenerating(true);
 
     try {
@@ -277,9 +415,12 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
       const plan = await response.json();
       
       if (appendMode && generatedPlan) {
-        setGeneratedPlan({ ...generatedPlan, ...plan });
+        const merged = { ...generatedPlan, ...plan };
+        setGeneratedPlan(merged);
+        setEditableContent(planToMarkdown(merged));
       } else {
         setGeneratedPlan(plan);
+        setEditableContent(planToMarkdown(plan));
       }
 
       toast({ title: 'Success', description: 'Document generated successfully' });
@@ -684,7 +825,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                   </div>
                   
                   <Button
-                    onClick={handleGenerate}
+                    onClick={handleValidateAndGenerate}
                     disabled={isGenerating}
                     className="w-full"
                     data-testid="button-generate"
@@ -703,112 +844,75 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                   </Button>
                 </CardContent>
               </Card>
+
+              {showValidation && (
+                <ValidationScreen
+                  missingFields={missingFields}
+                  onProceed={handleGenerate}
+                  onSkip={handleGenerate}
+                  onFieldComplete={handleValidationComplete}
+                />
+              )}
             </div>
 
             <div className="space-y-6">
-              <Card className="min-h-[600px]">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
+              {generatedPlan ? (
+                showPreview ? (
+                  <DocumentPreview
+                    content={editableContent}
+                    patientInfo={{
+                      name: patientData.patient_name,
+                      id: patientData.client_id,
+                      dob: patientData.date_of_birth,
+                    }}
+                    providerInfo={{
+                      name: patientData.provider_name,
+                      verified: true,
+                    }}
+                    onPrint={() => handleDownloadPdf()}
+                    onDownload={handleDownloadPdf}
+                    onBack={() => setShowPreview(false)}
+                  />
+                ) : (
+                  <NoteEditor
+                    content={editableContent}
+                    onChange={setEditableContent}
+                    detailLevel={editorDetailLevel}
+                    onDetailLevelChange={setEditorDetailLevel}
+                    onRefine={handleRefine}
+                    onRegenerate={handleRegenerate}
+                    isLoading={isGenerating}
+                    patientInfo={{
+                      name: patientData.patient_name,
+                      id: patientData.client_id,
+                    }}
+                    providerInfo={{
+                      name: patientData.provider_name,
+                      verified: true,
+                    }}
+                    documentTitle={selectedTemplate ? TEMPLATE_TYPE_LABELS[selectedTemplate.template_type] || 'Clinical Document' : 'Clinical Document'}
+                    onSave={handleSaveDocument}
+                    onPreview={() => setShowPreview(true)}
+                    isSaving={isSaving}
+                  />
+                )
+              ) : (
+                <Card className="min-h-[600px]">
+                  <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="h-5 w-5" /> {selectedTemplate ? TEMPLATE_TYPE_LABELS[selectedTemplate.template_type] || 'Document' : 'Document'}
                     </CardTitle>
                     <CardDescription>Generated clinical documentation</CardDescription>
-                  </div>
-                  {generatedPlan && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleSaveDocument}
-                        disabled={isSaving}
-                        data-testid="button-save-document"
-                      >
-                        {isSaving ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Save className="h-4 w-4 mr-1" /> Save
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={handleDownloadPdf}
-                        disabled={isDownloading}
-                        data-testid="button-download-pdf"
-                      >
-                        {isDownloading ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Download className="h-4 w-4 mr-1" /> PDF
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  {generatedPlan ? (
-                    <div className="prose prose-sm max-w-none">
-                      <div className="space-y-4 text-sm">
-                        {Object.entries(generatedPlan).map(([key, value]) => {
-                          if (!value) return null;
-                          const title = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                          
-                          if (Array.isArray(value)) {
-                            return (
-                              <div key={key}>
-                                <h4 className="font-semibold">{title}</h4>
-                                <ul className="list-disc pl-5">
-                                  {value.map((item: any, i: number) => (
-                                    <li key={i}>
-                                      {typeof item === 'object' 
-                                        ? item.code && item.name 
-                                          ? `${item.code} - ${item.name}`
-                                          : item.goal 
-                                            ? <><span className="font-medium">{item.goal}</span>{item.objectives && <ul className="list-disc pl-5 mt-1">{item.objectives.map((o: string, j: number) => <li key={j}>{o}</li>)}</ul>}</>
-                                            : JSON.stringify(item)
-                                        : String(item)
-                                      }
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            );
-                          }
-                          
-                          if (typeof value === 'object') {
-                            return (
-                              <div key={key}>
-                                <h4 className="font-semibold">{title}</h4>
-                                <div className="pl-4 border-l-2 border-slate-200">
-                                  {Object.entries(value as Record<string, any>).map(([k, v]) => (
-                                    <p key={k}><span className="font-medium">{k.replace(/_/g, ' ')}:</span> {String(v)}</p>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          }
-                          
-                          return (
-                            <div key={key}>
-                              <h4 className="font-semibold">{title}</h4>
-                              <p>{String(value)}</p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : (
+                  </CardHeader>
+                  <CardContent>
                     <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                       <FileText className="h-12 w-12 mb-4 opacity-50" />
                       <p>No document generated yet</p>
                       <p className="text-sm">Enter clinical inputs and click Generate</p>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
             </TabsContent>
