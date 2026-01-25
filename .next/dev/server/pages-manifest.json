@@ -2,11 +2,5 @@
   "/": "pages/index.js",
   "/_app": "pages/_app.js",
   "/_document": "pages/_document.js",
-  "/admin": "pages/admin.js",
-  "/api/documents": "pages/api/documents.js",
-  "/api/settings/get": "pages/api/settings/get.js",
-  "/api/templates": "pages/api/templates.js",
-  "/doctor": "pages/doctor.js",
-  "/login": "pages/login.js",
-  "/settings": "pages/settings.js"
+  "/login": "pages/login.js"
 }

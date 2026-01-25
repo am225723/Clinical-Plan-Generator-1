@@ -14,8 +14,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { LogOut, Settings, FileText, Loader2, AlertCircle, Download, Eye, Sparkles, History, Search, Save, Trash2 } from 'lucide-react';
+import { LogOut, Settings, FileText, Loader2, AlertCircle, Download, Eye, Sparkles, History, Search, Save, Trash2, LayoutDashboard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { DashboardHeader } from '@/components/dashboard/header';
+import { PracticeStats } from '@/components/dashboard/practice-stats';
+import { ClinicalCalendar } from '@/components/dashboard/clinical-calendar';
+import { BottomNav } from '@/components/ui/bottom-nav';
 
 interface DocumentTemplate {
   id: string;
@@ -103,7 +107,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
   
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
-  const [activeTab, setActiveTab] = useState('generate');
+  const [activeTab, setActiveTab] = useState('dashboard');
   
   const [savedDocuments, setSavedDocuments] = useState<SavedDocument[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(false);
@@ -114,6 +118,16 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
     loadSettings();
     loadTemplates();
   }, []);
+
+  useEffect(() => {
+    const tab = router.query.tab as string;
+    if (tab && ['dashboard', 'generate', 'history'].includes(tab)) {
+      setActiveTab(tab);
+      if (tab === 'history') {
+        loadDocuments();
+      }
+    }
+  }, [router.query.tab]);
 
   const loadSettings = async () => {
     const settings = await getDoctorSettings(supabase, user.id);
@@ -338,26 +352,15 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
       <Head>
         <title>Doctor Dashboard | GoldStandard Clinical</title>
       </Head>
-      <div className="min-h-screen bg-slate-50">
-        <header className="bg-white border-b px-6 py-4 flex items-center justify-between print:hidden">
-          <h1 className="font-serif font-bold text-xl text-slate-800">
-            GoldStandard<span className="text-blue-600">Clinical</span>
-            <Badge variant="outline" className="ml-3">Doctor</Badge>
-          </h1>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">{profile.full_name || user.email}</span>
-            <Button variant="ghost" size="sm" onClick={() => router.push('/settings')} data-testid="button-settings">
-              <Settings className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleSignOut} data-testid="button-signout">
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </header>
+      <div className="min-h-screen bg-background pb-28">
+        <DashboardHeader profile={profile} onSignOut={handleSignOut} />
 
-        <main className="container mx-auto py-6 px-4">
-          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v === 'history') loadDocuments(); }}>
-            <TabsList className="mb-6">
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v === 'history') loadDocuments(); }} className="print:hidden">
+          <div className="sticky top-[73px] z-20 bg-background/90 backdrop-blur-xl border-b border-border px-4 py-2">
+            <TabsList className="w-full grid grid-cols-3 max-w-md mx-auto">
+              <TabsTrigger value="dashboard" data-testid="tab-dashboard">
+                <LayoutDashboard className="h-4 w-4 mr-2" /> Dashboard
+              </TabsTrigger>
               <TabsTrigger value="generate" data-testid="tab-generate">
                 <Sparkles className="h-4 w-4 mr-2" /> Generate
               </TabsTrigger>
@@ -365,6 +368,14 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                 <History className="h-4 w-4 mr-2" /> History
               </TabsTrigger>
             </TabsList>
+          </div>
+
+          <TabsContent value="dashboard" className="mt-0">
+            <PracticeStats />
+            <ClinicalCalendar />
+          </TabsContent>
+
+          <main className="container mx-auto py-6 px-4">
 
             <TabsContent value="history">
               <Card>
@@ -795,8 +806,10 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
             </div>
           </div>
             </TabsContent>
+          </main>
           </Tabs>
-        </main>
+
+        <BottomNav />
       </div>
     </>
   );

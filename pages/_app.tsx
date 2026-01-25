@@ -3,6 +3,7 @@ import { useState, useEffect, createContext, useContext } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient, Session } from '@supabase/supabase-js';
 import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from '@/lib/theme';
 import '@/styles/globals.css';
 
 type SupabaseContext = {
@@ -47,9 +48,11 @@ export default function App({ Component, pageProps }: AppProps) {
   }, [supabase]);
 
   return (
-    <SupabaseContext.Provider value={{ supabase, session }}>
-      <Component {...pageProps} />
-      <Toaster />
-    </SupabaseContext.Provider>
+    <ThemeProvider>
+      <SupabaseContext.Provider value={{ supabase, session }}>
+        <Component {...pageProps} />
+        <Toaster />
+      </SupabaseContext.Provider>
+    </ThemeProvider>
   );
 }

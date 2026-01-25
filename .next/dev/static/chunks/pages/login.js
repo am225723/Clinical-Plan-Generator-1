@@ -8,8 +8,8 @@ __turbopack_load_page_chunks__("/login", [
   "static/chunks/node_modules_tailwind-merge_dist_bundle-mjs_mjs_0ab97e45._.js",
   "static/chunks/node_modules_@supabase_auth-js_dist_module_e0400d86._.js",
   "static/chunks/node_modules_47aeb22a._.js",
-  "static/chunks/[root-of-the-server]__c6411d54._.js",
+  "static/chunks/[root-of-the-server]__0446de65._.js",
   "static/chunks/styles_globals_dc36e6c9.css",
   "static/chunks/pages_login_2da965e7._.js",
-  "static/chunks/turbopack-pages_login_d3b05577._.js"
+  "static/chunks/turbopack-pages_login_4096306b._.js"
 ])

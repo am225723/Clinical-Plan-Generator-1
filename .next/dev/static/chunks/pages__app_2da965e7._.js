@@ -9,7 +9,7 @@
   "static/chunks/node_modules_@supabase_auth-js_dist_module_e0400d86._.js",
   "static/chunks/node_modules_tailwind-merge_dist_bundle-mjs_mjs_0ab97e45._.js",
   "static/chunks/node_modules_75fa7781._.js",
-  "static/chunks/[root-of-the-server]__ed1c83cd._.js",
+  "static/chunks/[root-of-the-server]__c7267824._.js",
   "static/chunks/styles_globals_dc36e6c9.css"
 ],
     source: "entry"
