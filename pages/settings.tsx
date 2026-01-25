@@ -228,15 +228,18 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
     setSaving(false);
   };
 
-  const handleEditTemplate = (template: DocumentTemplate) => {
-    setEditingTemplate(template);
-    setTemplateForm({
-      name: template.name,
-      template_type: template.template_type,
-      ai_prompt: template.ai_prompt,
-      is_default: template.is_default,
-    });
-    setShowTemplateEditor(true);
+  const handleEditTemplate = (template: { id: string; name: string; template_type: string; ai_prompt: string; is_default: boolean }) => {
+    const fullTemplate = templates.find(t => t.id === template.id);
+    if (fullTemplate) {
+      setEditingTemplate(fullTemplate);
+      setTemplateForm({
+        name: fullTemplate.name,
+        template_type: fullTemplate.template_type,
+        ai_prompt: fullTemplate.ai_prompt,
+        is_default: fullTemplate.is_default,
+      });
+      setShowTemplateEditor(true);
+    }
   };
 
   const handleDeleteTemplate = async (id: string) => {
@@ -252,7 +255,7 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
     }
   };
 
-  const handleDuplicateTemplate = (template: DocumentTemplate) => {
+  const handleDuplicateTemplate = (template: { name: string; template_type: string; ai_prompt: string; is_default: boolean }) => {
     setEditingTemplate(null);
     setTemplateForm({
       name: `${template.name} (Copy)`,
