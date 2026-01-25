@@ -20,6 +20,7 @@ import { DashboardHeader } from '@/components/dashboard/header';
 import { PracticeStats } from '@/components/dashboard/practice-stats';
 import { ClinicalCalendar } from '@/components/dashboard/clinical-calendar';
 import { BottomNav } from '@/components/ui/bottom-nav';
+import { FileUpload, UploadedFile } from '@/components/generator/file-upload';
 
 interface DocumentTemplate {
   id: string;
@@ -113,6 +114,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [documentsTotal, setDocumentsTotal] = useState(0);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
   useEffect(() => {
     loadSettings();
@@ -554,9 +556,12 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
               <Card>
                 <CardHeader>
                   <CardTitle>Clinical Inputs</CardTitle>
-                  <CardDescription>Enter clinical documentation to generate treatment plan</CardDescription>
+                  <CardDescription>Upload files or enter clinical documentation</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-6">
+                  <FileUpload files={uploadedFiles} onFilesChange={setUploadedFiles} />
+                  
+                  <div className="border-t pt-4">
                   <Tabs defaultValue="intake">
                     <TabsList className="grid grid-cols-4 w-full">
                       <TabsTrigger value="intake">Intake</TabsTrigger>
@@ -601,6 +606,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                       />
                     </TabsContent>
                   </Tabs>
+                  </div>
                 </CardContent>
               </Card>
 

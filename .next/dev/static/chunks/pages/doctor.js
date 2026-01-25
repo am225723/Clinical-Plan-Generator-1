@@ -1,5 +1,5 @@
 __turbopack_load_page_chunks__("/doctor", [
-  "static/chunks/[root-of-the-server]__ecfe8a19._.js",
+  "static/chunks/[root-of-the-server]__cc2d0cef._.js",
   "static/chunks/node_modules_next_dist_compiled_caaa605a._.js",
   "static/chunks/node_modules_next_dist_shared_lib_9a2a7093._.js",
   "static/chunks/node_modules_next_dist_client_5a8a528e._.js",
@@ -8,8 +8,8 @@ __turbopack_load_page_chunks__("/doctor", [
   "static/chunks/node_modules_react-dom_4411d9bd._.js",
   "static/chunks/node_modules_@supabase_auth-js_dist_module_e0400d86._.js",
   "static/chunks/node_modules_tailwind-merge_dist_bundle-mjs_mjs_0ab97e45._.js",
-  "static/chunks/node_modules_9f97c588._.js",
+  "static/chunks/node_modules_43316ea2._.js",
   "static/chunks/styles_globals_dc36e6c9.css",
   "static/chunks/pages_doctor_index_tsx_2da965e7._.js",
-  "static/chunks/turbopack-pages_doctor_index_tsx_868bf1bc._.js"
+  "static/chunks/turbopack-pages_doctor_index_tsx_5c2ead51._.js"
 ])
