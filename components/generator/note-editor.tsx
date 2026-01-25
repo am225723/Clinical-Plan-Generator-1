@@ -117,13 +117,16 @@ export function NoteEditor({
 
   const handleChatSend = () => {
     if (!chatInput.trim()) return;
-    const nextMessages = [...chatMessages, { role: 'user', content: chatInput.trim() }];
+    const nextMessages: { role: 'user' | 'assistant'; content: string }[] = [
+      ...chatMessages,
+      { role: 'user' as const, content: chatInput.trim() }
+    ];
     setChatMessages(nextMessages);
     setChatInput('');
     setTimeout(() => {
       setChatMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'Noted. Use the refine buttons to apply changes.' },
+        { role: 'assistant' as const, content: 'Noted. Use the refine buttons to apply changes.' },
       ]);
     }, 300);
   };
