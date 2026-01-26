@@ -146,7 +146,7 @@ export function TemplateConfig({
   const [templateHeader, setTemplateHeader] = useState('');
   const [guardrailsEnabled, setGuardrailsEnabled] = useState(true);
   const [suicideRiskEnabled, setSuicideRiskEnabled] = useState(true);
-  const [providerSignature, setProviderSignature] = useState('');
+  const [providerSignature, setProviderSignature] = useState('Douglas Zelisko, M.D.\nBoard Certified Psychiatrist');
   const [includeClientSignature, setIncludeClientSignature] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -505,11 +505,13 @@ export function TemplateConfig({
                   className="h-12 object-contain mx-auto invert dark:invert-0"
                 />
                 <div className="border-t border-border mt-3 pt-2 text-center">
-                  <Input
+                  <Textarea
                     value={providerSignature}
                     onChange={(e) => setProviderSignature(e.target.value)}
-                    placeholder="Dr. Douglas Zelisko, M.D."
-                    className="bg-transparent border-none text-center text-sm focus-visible:ring-0"
+                    placeholder="Douglas Zelisko, M.D.
+Board Certified Psychiatrist"
+                    className="bg-transparent border-none text-center text-sm focus-visible:ring-0 resize-none min-h-[50px]"
+                    rows={2}
                   />
                 </div>
               </div>
