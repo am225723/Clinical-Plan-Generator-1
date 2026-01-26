@@ -264,6 +264,44 @@ CREATE INDEX IF NOT EXISTS idx_saved_documents_patient_search
 CREATE INDEX IF NOT EXISTS idx_saved_documents_doctor_date 
   ON public.saved_documents (doctor_id, date_of_service DESC);
 
+-- 9. TRANSCRIPTION JOBS TABLE (Audio/Video Processing)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS public.transcription_jobs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  doctor_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  storage_path text NOT NULL,
+  file_name text NOT NULL,
+  file_type text NOT NULL CHECK (file_type IN ('audio', 'video')),
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+  transcript text,
+  error_message text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE public.transcription_jobs ENABLE ROW LEVEL SECURITY;
+
+-- Doctors can only access their own transcription jobs
+CREATE POLICY "Doctors can read own transcription jobs" ON public.transcription_jobs
+  FOR SELECT USING (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can insert own transcription jobs" ON public.transcription_jobs
+  FOR INSERT WITH CHECK (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can update own transcription jobs" ON public.transcription_jobs
+  FOR UPDATE USING (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can delete own transcription jobs" ON public.transcription_jobs
+  FOR DELETE USING (auth.uid() = doctor_id);
+
+-- Service role full access
+CREATE POLICY "Service role full access on transcription jobs" ON public.transcription_jobs
+  FOR ALL USING (auth.role() = 'service_role');
+
+CREATE INDEX IF NOT EXISTS idx_transcription_jobs_doctor_status 
+  ON public.transcription_jobs (doctor_id, status, created_at DESC);
+
 -- =====================================================
 -- SEED DATA: Test Accounts
 -- =====================================================
