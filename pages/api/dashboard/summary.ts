@@ -14,11 +14,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const authResult = await requireDoctor({ req, res } as any);
-  if ('redirect' in authResult) {
+  if ('redirect' in authResult || 'notFound' in authResult) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { user } = authResult.props;
+  const { user } = (authResult as { props: { user: { id: string } } }).props;
   const supabase = createServerClient({ req, res } as any);
 
   try {
