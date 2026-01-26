@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Shield, GripVertical, Plus, Play, Upload, ChevronLeft } from 'lucide-react';
+import { Sparkles, Shield, GripVertical, Plus, Play, Upload, ChevronLeft, Info, PenLine, FileSignature, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,9 @@ interface DocumentTemplate {
   pdf_config: {
     sections?: TemplateSection[];
     guardrails?: { id: string; name: string; enabled: boolean; description: string }[];
+    headerTitle?: string;
+    providerSignature?: string;
+    includeClientSignature?: boolean;
   };
   is_default: boolean;
 }
@@ -41,17 +44,24 @@ const DEFAULT_SECTIONS: Record<string, TemplateSection[]> = {
     { id: 'mse', name: 'Mental Status Exam (MSE)', required: true, order: 1 },
     { id: 'assessment', name: 'Assessment & Plan', required: true, order: 2 },
   ],
+  initial_eval: [
+    { id: 'chief_complaint', name: 'Chief Complaint', required: true, order: 0 },
+    { id: 'hpi', name: 'History of Present Illness', required: true, order: 1 },
+    { id: 'psychiatric_history', name: 'Psychiatric History', required: true, order: 2 },
+    { id: 'mse', name: 'Mental Status Exam', required: true, order: 3 },
+    { id: 'assessment', name: 'Assessment & Plan', required: true, order: 4 },
+  ],
+  soap_note: [
+    { id: 'subjective', name: 'Subjective', required: true, order: 0 },
+    { id: 'objective', name: 'Objective', required: true, order: 1 },
+    { id: 'assessment', name: 'Assessment', required: true, order: 2 },
+    { id: 'plan', name: 'Plan', required: true, order: 3 },
+  ],
   darp_note: [
     { id: 'data', name: 'Data', required: true, order: 0 },
     { id: 'assessment', name: 'Assessment', required: true, order: 1 },
     { id: 'response', name: 'Response', required: true, order: 2 },
     { id: 'plan', name: 'Plan', required: true, order: 3 },
-  ],
-  psych_note: [
-    { id: 'chief_complaint', name: 'Chief Complaint', required: true, order: 0 },
-    { id: 'hpi', name: 'History of Present Illness', required: true, order: 1 },
-    { id: 'mse', name: 'Mental Status Exam', required: true, order: 2 },
-    { id: 'assessment', name: 'Assessment & Plan', required: true, order: 3 },
   ],
   progress_note: [
     { id: 'subjective', name: 'Subjective', required: true, order: 0 },
@@ -62,8 +72,41 @@ const DEFAULT_SECTIONS: Record<string, TemplateSection[]> = {
   discharge_summary: [
     { id: 'admission', name: 'Admission Summary', required: true, order: 0 },
     { id: 'course', name: 'Hospital Course', required: true, order: 1 },
-    { id: 'discharge', name: 'Discharge Plan', required: true, order: 2 },
+    { id: 'discharge', name: 'Discharge Diagnosis', required: true, order: 2 },
+    { id: 'medications', name: 'Discharge Medications', required: true, order: 3 },
+    { id: 'followup', name: 'Follow-up Plan', required: true, order: 4 },
   ],
+};
+
+const DEFAULT_PROMPTS: Record<string, string> = {
+  initial_eval: `You are a Senior Clinical Psychiatrist performing an Initial Evaluation.
+Your goal is to synthesize patient intake data into a structured clinical narrative.
+Focus Areas:
+1. Presenting Problem & History of Present Illness
+2. Psychiatric and Medical History
+3. Mental Status Examination
+4. Risk Assessment
+5. Diagnostic Formulation with ICD-10 codes
+6. Treatment Recommendations`,
+  soap_note: `You are a Clinical Mental Health Provider documenting a SOAP note.
+Structure the note with:
+- Subjective: Patient's reported symptoms and concerns
+- Objective: Observable findings and mental status
+- Assessment: Clinical interpretation and diagnosis
+- Plan: Treatment interventions and follow-up`,
+  discharge_summary: `You are a Clinical Provider creating a Discharge Summary.
+Include:
+- Reason for admission and presenting problems
+- Course of treatment during hospitalization
+- Discharge diagnosis with ICD-10 codes
+- Medications at discharge
+- Aftercare plan and follow-up appointments`,
+  treatment_plan: `You are an Expert Clinical Psychiatrist.
+Generate a comprehensive treatment plan including:
+- SMART treatment goals
+- Evidence-based interventions
+- Risk assessment and safety planning
+- Medical decision-making documentation`,
 };
 
 const SAMPLE_OUTPUT = `**HISTORY OF PRESENT ILLNESS**
@@ -75,89 +118,153 @@ Appearance: Well-groomed. Behavior: Cooperative but guarded. Affect: Constricted
 **ASSESSMENT & PLAN**
 1. Initiate Sertraline 50mg PO daily.
 2. Refer for CBT weekly.
-3. Follow up in 4 weeks.`;
+3. Follow up in 4 weeks.
+
+_____________________________
+Provider Signature
+
+_____________________________
+Client Signature          Date`;
+
+const DEFAULT_TEMPLATES = [
+  { id: 'initial_eval', name: 'Initial Eval', type: 'initial_eval' },
+  { id: 'soap_note', name: 'SOAP Note', type: 'soap_note' },
+  { id: 'discharge_sum', name: 'Discharge Summary', type: 'discharge_summary' },
+];
 
 export function TemplateConfig({
   templates,
   onSave,
   onBack,
   logoUrl,
-  headerTitle = '',
   onLogoUpload,
-  onHeaderTitleChange,
 }: TemplateConfigProps) {
   const { toast } = useToast();
-  const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('initial_eval');
   const [sections, setSections] = useState<TemplateSection[]>([]);
   const [aiPrompt, setAiPrompt] = useState('');
+  const [templateHeader, setTemplateHeader] = useState('');
   const [guardrailsEnabled, setGuardrailsEnabled] = useState(true);
   const [suicideRiskEnabled, setSuicideRiskEnabled] = useState(true);
+  const [providerSignature, setProviderSignature] = useState('');
+  const [includeClientSignature, setIncludeClientSignature] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [localHeaderTitle, setLocalHeaderTitle] = useState(headerTitle);
+  const [generatingSections, setGeneratingSections] = useState(false);
   const [draggedSection, setDraggedSection] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
 
+  const displayedTemplates: DocumentTemplate[] = templates.length > 0 ? templates : DEFAULT_TEMPLATES.map((t) => ({
+    id: t.id,
+    name: t.name,
+    template_type: t.type,
+    ai_prompt: DEFAULT_PROMPTS[t.type] || '',
+    pdf_config: { 
+      sections: DEFAULT_SECTIONS[t.type] || [],
+      headerTitle: t.name,
+      providerSignature: '',
+      includeClientSignature: true,
+      guardrails: [
+        { id: 'hipaa', name: 'Clinical Guardrails', enabled: true, description: 'HIPAA compliance' },
+        { id: 'suicide_risk', name: 'Suicide Risk Detection', enabled: true, description: 'Flag risk markers' },
+      ],
+    },
+    is_default: t.id === 'initial_eval',
+  }));
+
   useEffect(() => {
-    if (templates.length > 0 && !selectedTemplate) {
-      selectTemplate(templates[0]);
+    const template = displayedTemplates.find((t) => t.id === selectedTemplateId);
+    if (template) {
+      setAiPrompt(template.ai_prompt || DEFAULT_PROMPTS[template.template_type] || '');
+      setSections(template.pdf_config?.sections || DEFAULT_SECTIONS[template.template_type] || []);
+      setTemplateHeader(template.pdf_config?.headerTitle || template.name);
+      setProviderSignature(template.pdf_config?.providerSignature || '');
+      setIncludeClientSignature(template.pdf_config?.includeClientSignature ?? true);
+      const guardrails = template.pdf_config?.guardrails || [];
+      const hipaaGuardrail = guardrails.find((g: { id: string; enabled: boolean }) => g.id === 'hipaa');
+      const riskGuardrail = guardrails.find((g: { id: string; enabled: boolean }) => g.id === 'suicide_risk');
+      setGuardrailsEnabled(hipaaGuardrail?.enabled ?? true);
+      setSuicideRiskEnabled(riskGuardrail?.enabled ?? true);
     }
-  }, [templates]);
+  }, [selectedTemplateId, templates]);
 
-  const selectTemplate = (template: DocumentTemplate) => {
-    setSelectedTemplate(template);
-    setAiPrompt(template.ai_prompt);
-    setSections(
-      template.pdf_config?.sections ||
-        DEFAULT_SECTIONS[template.template_type] ||
-        DEFAULT_SECTIONS.treatment_plan
-    );
-    const guardrails = template.pdf_config?.guardrails || [];
-    setGuardrailsEnabled(guardrails.some((g) => g.id === 'hipaa' && g.enabled) ?? true);
-    setSuicideRiskEnabled(guardrails.some((g) => g.id === 'suicide_risk' && g.enabled) ?? true);
+  const handleGenerateSectionsFromAI = async () => {
+    setGeneratingSections(true);
+    await new Promise((r) => setTimeout(r, 1500));
+    
+    const promptLower = aiPrompt.toLowerCase();
+    const generatedSections: TemplateSection[] = [];
+    let order = 0;
+
+    if (promptLower.includes('chief complaint')) {
+      generatedSections.push({ id: 'chief_complaint', name: 'Chief Complaint', required: true, order: order++ });
+    }
+    if (promptLower.includes('history of present illness') || promptLower.includes('hpi')) {
+      generatedSections.push({ id: 'hpi', name: 'History of Present Illness', required: true, order: order++ });
+    }
+    if (promptLower.includes('psychiatric history')) {
+      generatedSections.push({ id: 'psychiatric_history', name: 'Psychiatric History', required: true, order: order++ });
+    }
+    if (promptLower.includes('mental status') || promptLower.includes('mse')) {
+      generatedSections.push({ id: 'mse', name: 'Mental Status Examination', required: true, order: order++ });
+    }
+    if (promptLower.includes('risk assessment') || promptLower.includes('safety')) {
+      generatedSections.push({ id: 'risk_assessment', name: 'Risk Assessment', required: true, order: order++ });
+    }
+    if (promptLower.includes('diagnosis') || promptLower.includes('icd-10')) {
+      generatedSections.push({ id: 'diagnosis', name: 'Diagnosis & ICD-10 Codes', required: true, order: order++ });
+    }
+    if (promptLower.includes('assessment') || promptLower.includes('plan') || promptLower.includes('treatment')) {
+      generatedSections.push({ id: 'assessment_plan', name: 'Assessment & Plan', required: true, order: order++ });
+    }
+    if (promptLower.includes('subjective')) {
+      generatedSections.push({ id: 'subjective', name: 'Subjective', required: true, order: order++ });
+    }
+    if (promptLower.includes('objective')) {
+      generatedSections.push({ id: 'objective', name: 'Objective', required: true, order: order++ });
+    }
+
+    if (generatedSections.length === 0) {
+      generatedSections.push({ id: 'content', name: 'Clinical Content', required: true, order: 0 });
+    }
+
+    setSections(generatedSections);
+    setGeneratingSections(false);
+    toast({ title: 'Sections Generated', description: `Created ${generatedSections.length} sections from AI logic` });
   };
 
-  const handleDragStart = (sectionId: string) => {
-    setDraggedSection(sectionId);
-  };
-
+  const handleDragStart = (sectionId: string) => setDraggedSection(sectionId);
   const handleDragOver = (e: React.DragEvent, targetId: string) => {
     e.preventDefault();
     if (!draggedSection || draggedSection === targetId) return;
     setDragOverId(targetId);
   };
-
   const handleDrop = (e: React.DragEvent, targetId: string) => {
     e.preventDefault();
     if (!draggedSection || draggedSection === targetId) return;
-
     const newSections = [...sections];
     const draggedIndex = newSections.findIndex((s) => s.id === draggedSection);
     const targetIndex = newSections.findIndex((s) => s.id === targetId);
-
     if (draggedIndex !== -1 && targetIndex !== -1) {
       const [removed] = newSections.splice(draggedIndex, 1);
       newSections.splice(targetIndex, 0, removed);
-      const reordered = newSections.map((s, i) => ({ ...s, order: i }));
-      setSections(reordered);
+      setSections(newSections.map((s, i) => ({ ...s, order: i })));
     }
     setDraggedSection(null);
     setDragOverId(null);
   };
-
   const handleDragEnd = () => {
     setDraggedSection(null);
     setDragOverId(null);
   };
 
   const addSection = () => {
-    const newSection: TemplateSection = {
+    setSections([...sections, {
       id: `section_${Date.now()}`,
       name: 'New Section',
       required: false,
       order: sections.length,
-    };
-    setSections([...sections, newSection]);
+    }]);
   };
 
   const updateSectionName = (id: string, name: string) => {
@@ -165,18 +272,22 @@ export function TemplateConfig({
   };
 
   const handleSave = async () => {
-    if (!selectedTemplate) return;
+    const template = displayedTemplates.find((t) => t.id === selectedTemplateId);
+    if (!template) return;
     setSaving(true);
     try {
       const updatedTemplate: DocumentTemplate = {
-        ...selectedTemplate,
+        ...template,
         ai_prompt: aiPrompt,
         pdf_config: {
-          ...selectedTemplate.pdf_config,
+          ...template.pdf_config,
           sections,
+          headerTitle: templateHeader,
+          providerSignature,
+          includeClientSignature,
           guardrails: [
-            { id: 'hipaa', name: 'Clinical Guardrails', enabled: guardrailsEnabled, description: 'HIPAA compliance checks' },
-            { id: 'suicide_risk', name: 'Suicide Risk Detection', enabled: suicideRiskEnabled, description: 'Flag ideation markers aggressively' },
+            { id: 'hipaa', name: 'Clinical Guardrails', enabled: guardrailsEnabled, description: 'HIPAA compliance' },
+            { id: 'suicide_risk', name: 'Suicide Risk Detection', enabled: suicideRiskEnabled, description: 'Flag risk markers' },
           ],
         },
       };
@@ -193,32 +304,17 @@ export function TemplateConfig({
     setTimeout(() => setTesting(false), 1500);
   };
 
-  const templatePills = [
-    { id: 'initial_eval', name: 'Initial Eval', type: 'treatment_plan' },
-    { id: 'soap_note', name: 'SOAP Note', type: 'progress_note' },
-    { id: 'discharge_sum', name: 'Discharge Sum', type: 'discharge_summary' },
-  ];
-
-  const displayedTemplates = templates.length > 0 ? templates : templatePills.map((p, i) => ({
-    id: p.id,
-    name: p.name,
-    template_type: p.type,
-    ai_prompt: '',
-    pdf_config: { sections: DEFAULT_SECTIONS[p.type] },
-    is_default: i === 0,
-  }));
+  const selectedTemplate = displayedTemplates.find((t) => t.id === selectedTemplateId);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <header className="sticky top-0 z-50 glass-panel border-b border-border/50 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="p-2 -ml-2 rounded-xl hover:bg-muted transition-colors">
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">Settings</p>
-            <h1 className="text-lg font-bold">Template Config</h1>
-          </div>
+    <div className="min-h-screen bg-background pb-32">
+      <header className="sticky top-0 z-50 glass-panel border-b border-border/50 px-4 py-3 flex items-center gap-3">
+        <button onClick={onBack} className="p-2 -ml-2 rounded-xl hover:bg-muted transition-colors">
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <div>
+          <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">Settings</p>
+          <h1 className="text-lg font-bold">Template Config</h1>
         </div>
       </header>
 
@@ -229,13 +325,12 @@ export function TemplateConfig({
             {displayedTemplates.map((template) => (
               <button
                 key={template.id}
-                onClick={() => selectTemplate(template as DocumentTemplate)}
+                onClick={() => setSelectedTemplateId(template.id)}
                 className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                  selectedTemplate?.id === template.id
+                  selectedTemplateId === template.id
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-border'
                 }`}
-                data-testid={`template-pill-${template.id}`}
               >
                 {template.name}
               </button>
@@ -246,10 +341,22 @@ export function TemplateConfig({
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-semibold">AI Logic for {selectedTemplate?.name || 'Template'}</h2>
+            <h2 className="text-sm font-semibold">AI Logic for {selectedTemplate?.name}</h2>
           </div>
 
           <div className="glass-panel rounded-2xl p-4 space-y-4">
+            <div>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Template Header
+              </p>
+              <Input
+                value={templateHeader}
+                onChange={(e) => setTemplateHeader(e.target.value)}
+                placeholder="e.g., Initial Psychiatric Evaluation"
+                className="bg-card/50 dark:bg-card/30 border-border rounded-xl"
+              />
+            </div>
+
             <div>
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                 System Prompt
@@ -259,43 +366,63 @@ export function TemplateConfig({
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="Enter AI system prompt..."
                 className="min-h-[140px] bg-card/50 dark:bg-card/30 border-border rounded-xl text-sm resize-none"
-                data-testid="textarea-ai-prompt"
               />
               <p className="text-[10px] text-muted-foreground mt-1 text-right">v3.0 (GPT-4o)</p>
             </div>
 
-            <div className="flex items-center justify-between py-3 border-t border-border">
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Clinical Guardrails</span>
-              </div>
-              <Switch checked={guardrailsEnabled} onCheckedChange={setGuardrailsEnabled} />
-            </div>
-
-            <div className="flex items-center justify-between py-3 border-t border-border">
-              <div>
+            <div className="space-y-3 pt-2 border-t border-border">
+              <div className="flex items-center justify-between py-2">
                 <div className="flex items-center gap-2">
                   <Shield className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Suicide Risk Detection</span>
+                  <div>
+                    <span className="text-sm font-medium">Clinical Guardrails</span>
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <Info className="h-3 w-3" />
+                      HIPAA compliance, PHI protection, documentation standards
+                    </p>
+                  </div>
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-0.5 ml-6">
-                  Aggressively flag ideation markers
-                </p>
+                <Switch checked={guardrailsEnabled} onCheckedChange={setGuardrailsEnabled} />
               </div>
-              <Switch checked={suicideRiskEnabled} onCheckedChange={setSuicideRiskEnabled} />
+
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-rose-500" />
+                    <span className="text-sm font-medium">Suicide Risk Detection</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground ml-6 flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    Flags suicidal ideation, self-harm mentions, crisis indicators
+                  </p>
+                </div>
+                <Switch checked={suicideRiskEnabled} onCheckedChange={setSuicideRiskEnabled} />
+              </div>
             </div>
           </div>
         </section>
 
         <section className="space-y-4">
-          <div className="flex items-center gap-2">
-            <GripVertical className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-semibold">Note Structure</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <GripVertical className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-semibold">Note Structure</h2>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGenerateSectionsFromAI}
+              disabled={generatingSections}
+              className="gap-1.5 text-xs"
+            >
+              {generatingSections ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+              Auto-Generate
+            </Button>
           </div>
 
           <div className="glass-panel rounded-2xl p-4 space-y-3">
             <p className="text-xs text-muted-foreground">
-              Drag sections to reorder how the final clinical note is generated. This defines the output flow.
+              Drag sections to reorder. Click "Auto-Generate" to create sections from your AI prompt.
             </p>
 
             <div className="space-y-2">
@@ -308,7 +435,7 @@ export function TemplateConfig({
                   onDrop={(e) => handleDrop(e, section.id)}
                   onDragEnd={handleDragEnd}
                   className={`flex items-center gap-3 p-3 rounded-xl bg-card/50 dark:bg-card/30 border cursor-move transition-all ${
-                    draggedSection === section.id ? 'opacity-50 border-border' :
+                    draggedSection === section.id ? 'opacity-50' :
                     dragOverId === section.id ? 'border-primary bg-primary/5' : 'border-border'
                   }`}
                 >
@@ -350,8 +477,8 @@ export function TemplateConfig({
             </Button>
           </div>
 
-          <div className="glass-panel rounded-2xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="glass-panel rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] text-rose-500 font-medium">LIVE SAMPLE</span>
             </div>
             <div className="bg-card/50 dark:bg-card/30 rounded-xl p-4 text-xs font-mono leading-relaxed whitespace-pre-wrap text-muted-foreground max-h-[200px] overflow-y-auto">
@@ -362,11 +489,46 @@ export function TemplateConfig({
 
         <section className="space-y-4">
           <div className="flex items-center gap-2">
+            <FileSignature className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold">Signatures</h2>
+          </div>
+
+          <div className="glass-panel rounded-2xl p-4 space-y-4">
+            <div>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Provider Signature Line
+              </p>
+              <Input
+                value={providerSignature}
+                onChange={(e) => setProviderSignature(e.target.value)}
+                placeholder="Dr. Douglas Zelisko, M.D."
+                className="bg-card/50 dark:bg-card/30 border-border rounded-xl"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Your name/credentials that appear above the signature line
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between py-2 border-t border-border">
+              <div className="flex items-center gap-2">
+                <PenLine className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <span className="text-sm font-medium">Include Client Signature</span>
+                  <p className="text-[10px] text-muted-foreground">Add signature line for patient/client</p>
+                </div>
+              </div>
+              <Switch checked={includeClientSignature} onCheckedChange={setIncludeClientSignature} />
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
             <Upload className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-semibold">PDF Branding</h2>
           </div>
 
-          <div className="glass-panel rounded-2xl p-4 space-y-4">
+          <div className="glass-panel rounded-2xl p-4">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-xl bg-muted/50 border border-border flex items-center justify-center overflow-hidden">
                 {logoUrl ? (
@@ -376,9 +538,7 @@ export function TemplateConfig({
                 )}
               </div>
               <div className="flex-1">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  Logo
-                </p>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Logo</p>
                 <label className="text-sm text-primary hover:underline cursor-pointer">
                   Upload Logo
                   <input
@@ -393,32 +553,16 @@ export function TemplateConfig({
                 </label>
               </div>
             </div>
-
-            <div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Header Title
-              </p>
-              <Input
-                value={localHeaderTitle}
-                onChange={(e) => {
-                  setLocalHeaderTitle(e.target.value);
-                  onHeaderTitleChange?.(e.target.value);
-                }}
-                placeholder="Dr. Douglas Zelisko, M.D."
-                className="bg-card/50 dark:bg-card/30 border-border rounded-xl"
-              />
-            </div>
           </div>
         </section>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 pb-20 bg-gradient-to-t from-background via-background to-transparent">
+      <div className="fixed bottom-20 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent">
         <div className="max-w-lg mx-auto">
           <Button
             onClick={handleSave}
             disabled={saving}
             className="w-full h-12 btn-gradient text-white font-semibold rounded-xl shadow-glow"
-            data-testid="button-save-config"
           >
             {saving ? 'Saving...' : 'Save Configuration'}
           </Button>

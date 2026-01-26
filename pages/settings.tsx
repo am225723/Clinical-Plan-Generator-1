@@ -161,11 +161,8 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
         onSave={handleSaveTemplate}
         onBack={() => router.push('/doctor')}
         logoUrl={doctorSettings.logo_url || undefined}
-        headerTitle={headerTitle}
         onLogoUpload={handleLogoUpload}
-        onHeaderTitleChange={handleHeaderTitleChange}
       />
-      <BottomNav />
     </>
   );
 }

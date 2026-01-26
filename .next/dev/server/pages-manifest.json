@@ -1,11 +1,1 @@
-{
-  "/": "pages/index.js",
-  "/_app": "pages/_app.js",
-  "/_document": "pages/_document.js",
-  "/api/dashboard/appointments": "pages/api/dashboard/appointments.js",
-  "/api/dashboard/calendar-imports": "pages/api/dashboard/calendar-imports.js",
-  "/api/dashboard/summary": "pages/api/dashboard/summary.js",
-  "/api/templates": "pages/api/templates.js",
-  "/doctor": "pages/doctor.js",
-  "/login": "pages/login.js"
-}
+{}
