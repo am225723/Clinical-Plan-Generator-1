@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { AlertCircle, Pill, Brain, Sparkles, ChevronRight, SkipForward, Mic, FileText, ClipboardList, StickyNote, MessageSquare } from 'lucide-react';
+import { ClipboardCheck, Pill, Brain, Sparkles, CheckCircle, ArrowRight, Mic, FileText, ClipboardList, StickyNote, MessageSquare, Plus, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 
 interface ValidationItem {
   id: string;
@@ -13,10 +14,13 @@ interface ValidationItem {
 }
 
 interface ValidationScreenProps {
+  templateName?: string;
   missingFields: string[];
-  onProceed: () => void;
+  incompleteFields?: { field: string; hint: string }[];
+  onProceed: (fieldValues: Record<string, string>) => void;
   onSkip: () => void;
   onFieldComplete: (field: string, value: string) => void;
+  onBack?: () => void;
 }
 
 const FIELD_CONFIG: Record<string, { icon: React.ReactNode; description: string; placeholder: string }> = {
@@ -42,8 +46,13 @@ const FIELD_CONFIG: Record<string, { icon: React.ReactNode; description: string;
   },
   'Medication History': {
     icon: <Pill className="h-5 w-5" />,
-    description: 'Current medications improve interactions check',
+    description: 'Input current medications to improve interactions check',
     placeholder: 'E.g., Sertraline 50mg QD, Clonazepam 0.5mg PRN...',
+  },
+  'Mental Status Exam': {
+    icon: <Brain className="h-5 w-5" />,
+    description: 'Detailed thought process description is missing',
+    placeholder: 'Add Details',
   },
   'Mental Status': {
     icon: <Brain className="h-5 w-5" />,
@@ -53,14 +62,18 @@ const FIELD_CONFIG: Record<string, { icon: React.ReactNode; description: string;
 };
 
 export function ValidationScreen({
+  templateName = 'Treatment Plan',
   missingFields,
+  incompleteFields = [],
   onProceed,
   onSkip,
   onFieldComplete,
+  onBack,
 }: ValidationScreenProps) {
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [expandedField, setExpandedField] = useState<string | null>(null);
 
-  const validationItems: ValidationItem[] = missingFields.map((field) => {
+  const missingItems: ValidationItem[] = missingFields.map((field) => {
     const config = FIELD_CONFIG[field] || {
       icon: <FileText className="h-5 w-5" />,
       description: 'Required clinical information',
@@ -74,145 +87,174 @@ export function ValidationScreen({
     };
   });
 
-  const completedCount = Object.keys(fieldValues).filter(k => fieldValues[k]?.trim()).length;
-  const totalCount = missingFields.length || 1;
-  const progressPercent = Math.round((completedCount / totalCount) * 100);
+  const incompleteItems: ValidationItem[] = incompleteFields.map(({ field, hint }) => {
+    const config = FIELD_CONFIG[field] || {
+      icon: <FileText className="h-5 w-5" />,
+      description: hint || 'Additional information needed',
+      placeholder: 'Add Details',
+    };
+    return {
+      id: field,
+      title: field,
+      severity: 'incomplete' as const,
+      ...config,
+      description: hint || config.description,
+    };
+  });
 
-  if (missingFields.length === 0) {
+  const validationItems = [...missingItems, ...incompleteItems];
+  const totalItems = validationItems.length;
+
+  const handleFieldChange = (fieldId: string, value: string) => {
+    setFieldValues((prev) => ({ ...prev, [fieldId]: value }));
+    onFieldComplete(fieldId, value);
+  };
+
+  const handleProceed = () => {
+    onProceed(fieldValues);
+  };
+
+  if (validationItems.length === 0) {
     return null;
   }
 
   return (
-    <div className="glass-panel rounded-3xl p-6 space-y-6">
-      <div className="text-center">
-        <div className="relative w-20 h-20 mx-auto mb-4">
-          <svg className="w-20 h-20 -rotate-90">
-            <circle
-              className="text-muted"
-              cx="40"
-              cy="40"
-              fill="none"
-              r="36"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <circle
-              className="text-amber-500"
-              cx="40"
-              cy="40"
-              fill="none"
-              r="36"
-              stroke="currentColor"
-              strokeDasharray="226"
-              strokeDashoffset={226 - (226 * progressPercent) / 100}
-              strokeLinecap="round"
-              strokeWidth="4"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <AlertCircle className="h-8 w-8 text-amber-500" />
-          </div>
-        </div>
-        <h2 className="text-xl font-bold text-foreground mb-1">Clinical Readiness Check</h2>
-        <p className="text-muted-foreground text-sm">
-          Review missing details for better documentation quality
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-          Missing or Incomplete Info
-          <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full border border-border">
-            {validationItems.length} Items
-          </span>
-        </h3>
-
-        {validationItems.length > 0 ? (
-          validationItems.map((item: ValidationItem) => (
-            <div
-              key={item.id}
-              className={`rounded-2xl overflow-hidden border-l-4 shadow-lg ${
-                item.severity === 'missing'
-                  ? 'border-rose-500 bg-rose-500/5'
-                  : 'border-amber-500 bg-amber-500/5'
-              }`}
-            >
-              <div className="p-4 border-b border-border">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
-                      item.severity === 'missing'
-                        ? 'bg-rose-500/10 text-rose-500 border-rose-500/20'
-                        : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
-                    }`}
-                  >
-                    {item.icon}
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-foreground">{item.title}</h4>
-                    <p
-                      className={`text-[10px] font-bold tracking-wide mt-0.5 ${
-                        item.severity === 'missing' ? 'text-rose-500' : 'text-amber-500'
-                      }`}
-                    >
-                      {item.severity === 'missing' ? 'MISSING REQUIRED FIELD' : 'INCOMPLETE DATA'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="p-4 bg-card/40 dark:bg-card/20">
-                <label className="block text-xs text-muted-foreground mb-2">
-                  {item.description}:
-                </label>
-                <div className="relative">
-                  <Textarea
-                    value={fieldValues[item.id] || ''}
-                    onChange={(e) => {
-                      setFieldValues({ ...fieldValues, [item.id]: e.target.value });
-                    }}
-                    placeholder={item.placeholder}
-                    className="bg-card/50 dark:bg-card/20 border-border rounded-xl min-h-[80px] resize-none text-sm pr-12"
-                  />
-                  <button className="absolute bottom-3 right-3 p-1.5 bg-muted hover:bg-muted/80 text-muted-foreground rounded-lg transition-colors">
-                    <Mic className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="flex-1 px-4 py-6 pb-32 overflow-y-auto">
+        <div className="max-w-lg mx-auto space-y-6">
+          <div className="text-center py-4">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <ClipboardCheck className="h-8 w-8 text-primary" />
             </div>
-          ))
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>All required fields are complete!</p>
-          </div>
-        )}
-
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">
-          <div className="p-1 rounded bg-primary/20">
-            <Sparkles className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-primary">AI Optimization Tip</p>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Providing this data now will improve the clinical accuracy of the generated
-              treatment plan by approximately <span className="text-foreground font-medium">40%</span>.
+            <h1 className="text-xl font-bold text-foreground mb-1">Clinical Readiness Check</h1>
+            <p className="text-sm text-muted-foreground">
+              Review missing details for the{' '}
+              <span className="text-primary font-medium">{templateName}</span> template.
             </p>
           </div>
-        </div>
 
-        <div className="flex flex-col gap-3 pt-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                Missing or Incomplete Info
+              </h3>
+              <span className="text-[10px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full border border-border">
+                {totalItems} Items
+              </span>
+            </div>
+
+            {validationItems.map((item) => (
+              <div
+                key={item.id}
+                className={`rounded-2xl overflow-hidden border transition-all ${
+                  item.severity === 'missing'
+                    ? 'border-l-4 border-l-amber-500 border-t-border/50 border-r-border/50 border-b-border/50 bg-amber-500/5'
+                    : 'border-l-4 border-l-amber-600 border-t-border/50 border-r-border/50 border-b-border/50 bg-amber-600/5'
+                }`}
+              >
+                <div className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        item.severity === 'missing'
+                          ? 'bg-amber-500/20 text-amber-500'
+                          : 'bg-amber-600/20 text-amber-600'
+                      }`}
+                    >
+                      {item.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold text-foreground">{item.title}</h4>
+                      </div>
+                      <p
+                        className={`text-[10px] font-bold tracking-wide mt-0.5 uppercase ${
+                          item.severity === 'missing' ? 'text-amber-500' : 'text-amber-600'
+                        }`}
+                      >
+                        {item.severity === 'missing' ? 'Missing Required Field' : 'Incomplete Data'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3">
+                    <p className="text-xs text-muted-foreground mb-2">{item.description}:</p>
+                    {expandedField === item.id ? (
+                      <Textarea
+                        value={fieldValues[item.id] || ''}
+                        onChange={(e) => handleFieldChange(item.id, e.target.value)}
+                        placeholder={item.placeholder}
+                        className="bg-card/50 dark:bg-card/30 border-border rounded-xl min-h-[80px] resize-none text-sm"
+                        autoFocus
+                        onBlur={() => {
+                          if (!fieldValues[item.id]?.trim()) {
+                            setExpandedField(null);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div
+                        onClick={() => setExpandedField(item.id)}
+                        className="flex items-center gap-2 p-3 bg-card/50 dark:bg-card/30 rounded-xl border border-border cursor-pointer hover:bg-card/70 transition-colors group"
+                      >
+                        <span className="flex-1 text-sm text-muted-foreground">
+                          {fieldValues[item.id] || item.placeholder}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {item.severity === 'incomplete' ? (
+                            <button className="p-1.5 rounded-lg bg-muted/50 hover:bg-muted text-muted-foreground transition-colors">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          ) : (
+                            <button className="p-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors">
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          <button className="p-1.5 rounded-lg bg-muted/50 hover:bg-muted text-muted-foreground transition-colors">
+                            <Mic className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-start gap-3 p-4 rounded-2xl bg-primary/5 border border-primary/20">
+            <div className="p-1.5 rounded-lg bg-primary/20 flex-shrink-0">
+              <Sparkles className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-primary">AI Optimization Tip</p>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                Providing this data now will improve the clinical accuracy of the generated
+                treatment plan by approximately{' '}
+                <span className="text-foreground font-semibold">40%</span>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-20 bg-gradient-to-t from-background via-background to-transparent">
+        <div className="max-w-lg mx-auto space-y-3">
           <Button
-            onClick={onProceed}
+            onClick={handleProceed}
             className="w-full h-12 btn-gradient text-white font-semibold rounded-xl shadow-glow"
+            data-testid="button-proceed-generation"
           >
-            <ChevronRight className="mr-2 h-5 w-5" />
+            <CheckCircle className="mr-2 h-5 w-5" />
             Proceed to Generation
           </Button>
           <button
             onClick={onSkip}
             className="w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
+            data-testid="button-skip-generation"
           >
-            <SkipForward className="h-4 w-4" />
             Skip and Generate Anyway
+            <ArrowRight className="h-4 w-4" />
           </button>
         </div>
       </div>

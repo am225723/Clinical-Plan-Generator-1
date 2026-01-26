@@ -2986,8 +2986,46 @@
     }
   }
 
+  .border-t-border\/50 {
+    border-top-color: #dadee580;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-t-border\/50 {
+      border-top-color: color-mix(in oklab, var(--color-border) 50%, transparent);
+    }
+  }
+
   .border-t-transparent {
     border-top-color: #0000;
+  }
+
+  .border-r-border\/50 {
+    border-right-color: #dadee580;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-r-border\/50 {
+      border-right-color: color-mix(in oklab, var(--color-border) 50%, transparent);
+    }
+  }
+
+  .border-b-border\/50 {
+    border-bottom-color: #dadee580;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-b-border\/50 {
+      border-bottom-color: color-mix(in oklab, var(--color-border) 50%, transparent);
+    }
+  }
+
+  .border-l-amber-500 {
+    border-left-color: var(--color-amber-500);
+  }
+
+  .border-l-amber-600 {
+    border-left-color: var(--color-amber-600);
   }
 
   .border-l-rose-500 {
@@ -3054,6 +3092,36 @@
   @supports (color: color-mix(in lab, red, red)) {
     .bg-amber-500\/10 {
       background-color: color-mix(in oklab, var(--color-amber-500) 10%, transparent);
+    }
+  }
+
+  .bg-amber-500\/20 {
+    background-color: #f99c0033;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-amber-500\/20 {
+      background-color: color-mix(in oklab, var(--color-amber-500) 20%, transparent);
+    }
+  }
+
+  .bg-amber-600\/5 {
+    background-color: #dd74000d;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-amber-600\/5 {
+      background-color: color-mix(in oklab, var(--color-amber-600) 5%, transparent);
+    }
+  }
+
+  .bg-amber-600\/20 {
+    background-color: #dd740033;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-amber-600\/20 {
+      background-color: color-mix(in oklab, var(--color-amber-600) 20%, transparent);
     }
   }
 
@@ -3715,6 +3783,11 @@
     --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
   }
 
+  .from-background {
+    --tw-gradient-from: var(--color-background);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+
   .from-card\/60 {
     --tw-gradient-from: #fff9;
   }
@@ -3774,6 +3847,12 @@
 
   .via-\[\#0ebcb0\] {
     --tw-gradient-via: #0ebcb0;
+    --tw-gradient-via-stops: var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-via) var(--tw-gradient-via-position), var(--tw-gradient-to) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-via-stops);
+  }
+
+  .via-background {
+    --tw-gradient-via: var(--color-background);
     --tw-gradient-via-stops: var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-via) var(--tw-gradient-via-position), var(--tw-gradient-to) var(--tw-gradient-to-position);
     --tw-gradient-stops: var(--tw-gradient-via-stops);
   }
@@ -4090,10 +4169,6 @@
 
   .pr-10 {
     padding-right: calc(var(--spacing) * 10);
-  }
-
-  .pr-12 {
-    padding-right: calc(var(--spacing) * 12);
   }
 
   .pb-1 {
@@ -4539,10 +4614,6 @@
 
   .text-indigo-600 {
     color: var(--color-indigo-600);
-  }
-
-  .text-muted {
-    color: var(--color-muted);
   }
 
   .text-muted-foreground {
@@ -6179,6 +6250,18 @@
     @supports (color: color-mix(in lab, red, red)) {
       .hover\:bg-card\/60:hover {
         background-color: color-mix(in oklab, var(--color-card) 60%, transparent);
+      }
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-card\/70:hover {
+      background-color: #ffffffb3;
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .hover\:bg-card\/70:hover {
+        background-color: color-mix(in oklab, var(--color-card) 70%, transparent);
       }
     }
   }
