@@ -46,6 +46,38 @@ CREATE INDEX IF NOT EXISTS idx_appointments_doctor_date
 CREATE INDEX IF NOT EXISTS idx_appointments_pending_notes 
   ON public.appointments (doctor_id, notes_pending) WHERE notes_pending = true;
 
+-- 1b. TRANSCRIPTION JOBS TABLE (Audio/Video Processing)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS public.transcription_jobs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  doctor_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  storage_path text NOT NULL,
+  file_name text NOT NULL,
+  file_type text NOT NULL CHECK (file_type IN ('audio', 'video')),
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+  transcript text,
+  error_message text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
+);
+
+ALTER TABLE public.transcription_jobs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Doctors can read own transcription jobs" ON public.transcription_jobs
+  FOR SELECT USING (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can insert own transcription jobs" ON public.transcription_jobs
+  FOR INSERT WITH CHECK (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can update own transcription jobs" ON public.transcription_jobs
+  FOR UPDATE USING (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can delete own transcription jobs" ON public.transcription_jobs
+  FOR DELETE USING (auth.uid() = doctor_id);
+
+CREATE INDEX IF NOT EXISTS idx_transcription_jobs_doctor_status 
+  ON public.transcription_jobs (doctor_id, status, created_at DESC);
+
 -- 2. ICD_CODE_USAGE TABLE (Track ICD-10 codes used in documents)
 -- =====================================================
 CREATE TABLE IF NOT EXISTS public.icd_code_usage (

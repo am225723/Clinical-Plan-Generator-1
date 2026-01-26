@@ -137,10 +137,18 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
     fontWeight: 'normal' as 'normal' | 'bold',
   });
   const processedFileIds = useRef<Set<string>>(new Set());
+  const transcriptionPollers = useRef<Record<string, NodeJS.Timeout>>({});
 
   useEffect(() => {
     loadSettings();
     loadTemplates();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      Object.values(transcriptionPollers.current).forEach((interval) => clearInterval(interval));
+      transcriptionPollers.current = {};
+    };
   }, []);
 
   useEffect(() => {
@@ -167,7 +175,45 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
           }
         }
         if (file.type === 'audio' || file.type === 'video') {
-          summary += '\n[Transcription pending: please paste transcript or summary manually.]';
+          summary += '\n[Transcription submitted. Transcript will be added automatically when ready.]';
+          try {
+            const base64 = await fileToBase64(file.file);
+            const response = await fetch('/api/transcriptions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                fileName: file.name,
+                fileType: file.type,
+                contentType: file.file.type || undefined,
+                data: base64,
+              }),
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to submit transcription.');
+            }
+
+            const data = await response.json();
+            if (data.status === 'completed' && data.transcript) {
+              appendTranscript(file.name, data.transcript);
+            } else if (data.status === 'failed') {
+              toast({
+                title: 'Transcription failed',
+                description: data.error || `Unable to transcribe ${file.name}.`,
+                variant: 'destructive',
+              });
+            } else {
+              startPollingTranscription(data.jobId, file.name);
+            }
+          } catch (error: any) {
+            toast({
+              title: 'Transcription error',
+              description: error?.message || `Unable to transcribe ${file.name}.`,
+              variant: 'destructive',
+            });
+          }
         }
         setClinicalInputs((prev) => ({
           ...prev,
@@ -193,6 +239,67 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
       text += `${pageText}\n`;
     }
     return text.trim();
+  };
+
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.split(',')[1] || '';
+        resolve(base64);
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
+  const appendTranscript = (fileName: string, transcript: string) => {
+    setClinicalInputs((prev) => ({
+      ...prev,
+      session_transcripts: [
+        prev.session_transcripts,
+        `Transcript (${fileName}):\n${transcript}`.trim(),
+      ]
+        .filter(Boolean)
+        .join('\n\n')
+        .trim(),
+    }));
+  };
+
+  const pollTranscriptionJob = async (jobId: string, fileName: string) => {
+    const response = await fetch(`/api/transcriptions/${jobId}`);
+    if (!response.ok) {
+      throw new Error('Unable to fetch transcription status.');
+    }
+    const data = await response.json();
+    if (data.status === 'completed' && data.transcript) {
+      appendTranscript(fileName, data.transcript);
+      toast({ title: 'Transcription ready', description: `${fileName} transcript added.` });
+      if (transcriptionPollers.current[jobId]) {
+        clearInterval(transcriptionPollers.current[jobId]);
+        delete transcriptionPollers.current[jobId];
+      }
+    }
+    if (data.status === 'failed') {
+      toast({
+        title: 'Transcription failed',
+        description: data.error || `Unable to transcribe ${fileName}.`,
+        variant: 'destructive',
+      });
+      if (transcriptionPollers.current[jobId]) {
+        clearInterval(transcriptionPollers.current[jobId]);
+        delete transcriptionPollers.current[jobId];
+      }
+    }
+    return data;
+  };
+
+  const startPollingTranscription = (jobId: string, fileName: string) => {
+    if (transcriptionPollers.current[jobId]) return;
+    transcriptionPollers.current[jobId] = setInterval(() => {
+      void pollTranscriptionJob(jobId, fileName);
+    }, 5000);
+    void pollTranscriptionJob(jobId, fileName);
   };
 
   const buildPrompt = (basePrompt?: string | null, template?: DocumentTemplate | null) => {
