@@ -181,7 +181,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
   }, [uploadedFiles]);
 
   const extractPdfText = async (file: File): Promise<string> => {
-    const pdfjs = await import('pdfjs-dist/legacy/build/pdf');
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
     const buffer = await file.arrayBuffer();
     const pdf = await pdfjs.getDocument({ data: buffer }).promise;
     const maxPages = Math.min(pdf.numPages, 5);
