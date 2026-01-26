@@ -48,6 +48,8 @@ export function NoteEditor({
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'assistant' | 'user'; content: string }>>([
     { role: 'assistant', content: 'How would you like to refine this note?' },
   ]);
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(content);
@@ -115,20 +117,48 @@ export function NoteEditor({
     onRefine(`Refine the "${title}" section with detail level ${level}.`, level);
   };
 
-  const handleChatSend = () => {
-    if (!chatInput.trim()) return;
+  const handleChatSend = async () => {
+    if (!chatInput.trim() || isChatLoading) return;
+    const userMessage = chatInput.trim();
     const nextMessages: { role: 'user' | 'assistant'; content: string }[] = [
       ...chatMessages,
-      { role: 'user' as const, content: chatInput.trim() }
+      { role: 'user' as const, content: userMessage },
     ];
     setChatMessages(nextMessages);
     setChatInput('');
-    setTimeout(() => {
+    setIsChatLoading(true);
+    setChatError(null);
+    try {
+      const response = await fetch('/api/refine-note', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: nextMessages,
+          noteContent: content,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to get chat response');
+      }
+      const data = await response.json();
+      const assistantMessage =
+        typeof data?.assistantMessage === 'string' && data.assistantMessage.trim()
+          ? data.assistantMessage
+          : 'I can help refine this note. What would you like to change?';
+      setChatMessages((prev) => [...prev, { role: 'assistant', content: assistantMessage }]);
+      if (typeof data?.updatedContent === 'string' && data.updatedContent.trim()) {
+        onContentChange(data.updatedContent.trim());
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Something went wrong with the chat request.';
+      setChatError(message);
       setChatMessages((prev) => [
         ...prev,
-        { role: 'assistant' as const, content: 'Noted. Use the refine buttons to apply changes.' },
+        { role: 'assistant', content: `Sorry, I couldn't complete that request. ${message}` },
       ]);
-    }, 300);
+    } finally {
+      setIsChatLoading(false);
+    }
   };
 
   return (
@@ -305,20 +335,24 @@ export function NoteEditor({
               </div>
             ))}
           </div>
+          {chatError ? (
+            <p className="mt-2 text-xs text-destructive">{chatError}</p>
+          ) : null}
           <div className="mt-3 flex gap-2">
             <Textarea
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               placeholder="Ask the AI about edits..."
               className="flex-1 min-h-[60px]"
+              disabled={isChatLoading}
             />
             <Button
               size="sm"
               className="btn-gradient text-white"
               onClick={handleChatSend}
-              disabled={!chatInput.trim()}
+              disabled={!chatInput.trim() || isChatLoading}
             >
-              Send
+              {isChatLoading ? 'Sending...' : 'Send'}
             </Button>
           </div>
         </div>

@@ -85,5 +85,61 @@ OUTPUT JSON FORMAT:
     }
   });
 
+  app.post("/api/refine-note", async (req, res) => {
+    try {
+      const { messages, noteContent } = req.body as {
+        messages?: { role: "assistant" | "user"; content: string }[];
+        noteContent?: string;
+      };
+
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({ error: "Conversation messages are required" });
+      }
+
+      const promptMessages = [
+        {
+          role: "system" as const,
+          content:
+            "You are a clinical documentation assistant. Reply with JSON that contains an assistantMessage and optional updatedContent. If the user explicitly asks to change the note, return updatedContent with the full revised note; otherwise set updatedContent to null.",
+        },
+        {
+          role: "user" as const,
+          content: `Current note content:\n${noteContent || "No note content provided."}`,
+        },
+        ...messages.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+      ];
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: promptMessages,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error("No response from AI");
+      }
+
+      const parsed = JSON.parse(content) as {
+        assistantMessage?: string;
+        updatedContent?: string | null;
+      };
+
+      res.json({
+        assistantMessage: parsed.assistantMessage || "Let me know how you'd like to adjust the note.",
+        updatedContent: parsed.updatedContent ?? null,
+      });
+    } catch (error) {
+      console.error("Error refining note:", error);
+      res.status(500).json({
+        error: "Failed to refine note",
+        details: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
   return httpServer;
 }
