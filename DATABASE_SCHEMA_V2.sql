@@ -40,6 +40,36 @@ CREATE POLICY "Doctors can update own appointments" ON public.appointments
 CREATE POLICY "Doctors can delete own appointments" ON public.appointments
   FOR DELETE USING (auth.uid() = doctor_id);
 
+-- 2. CALENDAR IMPORTS TABLE
+-- =====================================================
+CREATE TABLE IF NOT EXISTS public.calendar_imports (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  doctor_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  uid text NOT NULL,
+  summary text,
+  location text,
+  start_time timestamp with time zone NOT NULL,
+  end_time timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS calendar_imports_unique_event
+  ON public.calendar_imports (doctor_id, uid, start_time);
+
+ALTER TABLE public.calendar_imports ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Doctors can read own calendar imports" ON public.calendar_imports
+  FOR SELECT USING (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can insert own calendar imports" ON public.calendar_imports
+  FOR INSERT WITH CHECK (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can update own calendar imports" ON public.calendar_imports
+  FOR UPDATE USING (auth.uid() = doctor_id);
+
+CREATE POLICY "Doctors can delete own calendar imports" ON public.calendar_imports
+  FOR DELETE USING (auth.uid() = doctor_id);
+
 CREATE INDEX IF NOT EXISTS idx_appointments_doctor_date 
   ON public.appointments (doctor_id, scheduled_time DESC);
 

@@ -16,13 +16,30 @@ interface Appointment {
   hasFlag?: boolean;
   attachedNote?: string;
   documentId?: string;
+  externalUid?: string;
+  startTime?: string;
 }
 
 interface ClinicalCalendarProps {
   onGenerateForAppointment?: (appointment: Appointment) => void;
 }
 
-const STORAGE_KEY = 'importedAppointments';
+interface CalendarImportEvent {
+  uid: string;
+  summary: string;
+  location: string;
+  startTime: string;
+  endTime?: string | null;
+}
+
+interface CalendarImportRecord {
+  id: string;
+  uid: string;
+  summary: string | null;
+  location: string | null;
+  start_time: string;
+  end_time: string | null;
+}
 
 export function ClinicalCalendar({ onGenerateForAppointment }: ClinicalCalendarProps) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -33,14 +50,19 @@ export function ClinicalCalendar({ onGenerateForAppointment }: ClinicalCalendarP
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+    const fetchImportedAppointments = async () => {
       try {
-        setImportedAppointments(JSON.parse(stored));
-      } catch {
-        setImportedAppointments([]);
+        const response = await fetch('/api/dashboard/calendar-imports');
+        if (!response.ok) throw new Error('Failed to load imported events');
+        const data = await response.json();
+        const mapped = (data.events || []).map(mapImportRecordToAppointment);
+        setImportedAppointments(mapped);
+      } catch (error) {
+        console.error('Failed to fetch imported events:', error);
       }
-    }
+    };
+
+    void fetchImportedAppointments();
   }, []);
 
   useEffect(() => {
@@ -106,9 +128,19 @@ export function ClinicalCalendar({ onGenerateForAppointment }: ClinicalCalendarP
     try {
       const text = await file.text();
       const events = parseIcal(text);
-      const merged = [...importedAppointments, ...events];
-      setImportedAppointments(merged);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      const deduped = dedupeCalendarEvents(events, importedAppointments);
+      if (deduped.length === 0) return;
+
+      const response = await fetch('/api/dashboard/calendar-imports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ events: deduped }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save imported events');
+      const data = await response.json();
+      const mapped = (data.events || []).map(mapImportRecordToAppointment);
+      setImportedAppointments((prev) => mergeAppointments(prev, mapped));
     } catch (error) {
       console.error('Failed to import iCal:', error);
     } finally {
@@ -284,25 +316,23 @@ export function ClinicalCalendar({ onGenerateForAppointment }: ClinicalCalendarP
   );
 }
 
-function parseIcal(icsText: string): Appointment[] {
+function parseIcal(icsText: string): CalendarImportEvent[] {
   const events = icsText.split('BEGIN:VEVENT').slice(1);
   return events.map((eventText, index) => {
     const summary = matchIcalField(eventText, 'SUMMARY') || 'Imported Appointment';
     const location = matchIcalField(eventText, 'LOCATION') || 'Virtual';
     const dtStart = matchIcalField(eventText, 'DTSTART') || '';
-    const date = dtStart ? new Date(dtStart.replace(/(\d{4})(\d{2})(\d{2})T?(\d{2})(\d{2})?.*/, '$1-$2-$3T$4:$5:00')) : new Date();
-    const hours = date.getHours() || 9;
-    const minutes = date.getMinutes();
-    const time = `${String(hours % 12 || 12).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    const period = hours >= 12 ? 'PM' : 'AM';
+    const dtEnd = matchIcalField(eventText, 'DTEND');
+    const startDate = parseIcalDate(dtStart) ?? new Date();
+    const endDate = dtEnd ? parseIcalDate(dtEnd) : null;
+    const uid = matchIcalField(eventText, 'UID') || `${summary}-${startDate.getTime()}-${index}`;
+
     return {
-      id: `imported-${index}-${date.getTime()}`,
-      time,
-      period,
-      patientName: summary,
-      appointmentType: 'Imported',
+      uid,
+      summary,
       location,
-      status: 'pending' as const,
+      startTime: startDate.toISOString(),
+      endTime: endDate ? endDate.toISOString() : null,
     };
   });
 }
@@ -310,4 +340,83 @@ function parseIcal(icsText: string): Appointment[] {
 function matchIcalField(text: string, field: string): string | null {
   const match = text.match(new RegExp(`${field}:([^\\r\\n]*)`));
   return match ? match[1].trim() : null;
+}
+
+function parseIcalDate(value: string): Date | null {
+  if (!value) return null;
+  const dateOnly = /^\d{8}$/.test(value);
+  if (dateOnly) {
+    const formatted = `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}T09:00:00`;
+    const date = new Date(formatted);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const dateTimeWithSeconds = /^\d{8}T\d{6}/.test(value);
+  const dateTimeWithMinutes = /^\d{8}T\d{4}/.test(value);
+
+  if (dateTimeWithSeconds || dateTimeWithMinutes) {
+    const year = value.slice(0, 4);
+    const month = value.slice(4, 6);
+    const day = value.slice(6, 8);
+    const hour = value.slice(9, 11);
+    const minute = value.slice(11, 13);
+    const second = dateTimeWithSeconds ? value.slice(13, 15) : '00';
+    const formatted = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+    const date = new Date(formatted);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function mapImportRecordToAppointment(record: CalendarImportRecord): Appointment {
+  const date = new Date(record.start_time);
+  const hours = date.getHours() || 9;
+  const minutes = date.getMinutes();
+  const time = `${String(hours % 12 || 12).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  const period = hours >= 12 ? 'PM' : 'AM';
+  return {
+    id: `calendar-${record.id}`,
+    time,
+    period,
+    patientName: record.summary || 'Imported Appointment',
+    appointmentType: 'Imported',
+    location: record.location || 'Virtual',
+    status: 'pending',
+    externalUid: record.uid,
+    startTime: record.start_time,
+  };
+}
+
+function buildCalendarKey(uid: string, startTime: string) {
+  return `${uid}-${startTime}`;
+}
+
+function dedupeCalendarEvents(events: CalendarImportEvent[], existing: Appointment[]) {
+  const existingKeys = new Set(
+    existing
+      .map((apt) => (apt.externalUid && apt.startTime ? buildCalendarKey(apt.externalUid, apt.startTime) : null))
+      .filter(Boolean) as string[]
+  );
+
+  return events.filter((event) => {
+    const key = buildCalendarKey(event.uid, event.startTime);
+    if (existingKeys.has(key)) return false;
+    existingKeys.add(key);
+    return true;
+  });
+}
+
+function mergeAppointments(existing: Appointment[], incoming: Appointment[]) {
+  const merged = new Map<string, Appointment>();
+  existing.forEach((apt) => {
+    const key = apt.externalUid && apt.startTime ? buildCalendarKey(apt.externalUid, apt.startTime) : apt.id;
+    merged.set(key, apt);
+  });
+  incoming.forEach((apt) => {
+    const key = apt.externalUid && apt.startTime ? buildCalendarKey(apt.externalUid, apt.startTime) : apt.id;
+    merged.set(key, apt);
+  });
+  return Array.from(merged.values()).sort((a, b) => a.time.localeCompare(b.time));
 }
