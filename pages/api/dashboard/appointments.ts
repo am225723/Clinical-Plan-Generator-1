@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createServerClient } from '@/lib/supabase';
+import { requireDoctor } from '@/lib/auth';
 
 interface Appointment {
   id: string;
@@ -19,49 +20,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const supabase = createServerClient({ req, res } as any);
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session) {
+  const authResult = await requireDoctor({ req, res } as any);
+  if ('redirect' in authResult) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', session.user.id)
-    .single();
-
-  if (!profile || (profile.role !== 'doctor' && profile.role !== 'admin')) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
+  const { user } = authResult.props;
+  const supabase = createServerClient({ req, res } as any);
 
   try {
-    const { data: documents, error } = await supabase
-      .from('saved_documents')
-      .select('id, patient_name, patient_data, date_of_service, status')
-      .eq('doctor_id', session.user.id)
-      .order('date_of_service', { ascending: true })
+    const nowIso = new Date().toISOString();
+    const { data: appointmentsData, error } = await supabase
+      .from('appointments')
+      .select(
+        'id, patient_name, appointment_type, location, scheduled_time, status, has_flag, notes_pending, attached_note, document_id, external_calendar_id'
+      )
+      .eq('doctor_id', user.id)
+      .gte('scheduled_time', nowIso)
+      .order('scheduled_time', { ascending: true })
       .limit(25);
 
     if (error) throw error;
 
-    const appointments: Appointment[] = (documents || []).map((doc: any, index: number) => {
-      const date = new Date(doc.date_of_service);
-      const hours = date.getHours() || 9 + (index % 6) * 1.5;
-      const time = `${Math.floor(hours)}`.padStart(2, '0') + ':' + (hours % 1 ? '30' : '00');
+    const appointments: Appointment[] = (appointmentsData || []).map((appointment: any) => {
+      const scheduledTime = new Date(appointment.scheduled_time);
+      const hours = scheduledTime.getHours();
+      const minutes = scheduledTime.getMinutes();
+      const time = `${String(hours % 12 || 12).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
       const period = hours >= 12 ? 'PM' : 'AM';
+      const status: Appointment['status'] =
+        appointment.status === 'completed'
+          ? 'completed'
+          : appointment.status === 'in_progress'
+          ? 'in_progress'
+          : 'pending';
       return {
-        id: doc.id,
+        id: appointment.id,
         time,
         period,
-        patientName: doc.patient_name || doc.patient_data?.patient_name || 'Unknown',
-        appointmentType: doc.patient_data?.appointment_type || 'Appointment',
-        location: doc.patient_data?.location || 'Virtual',
-        status: doc.status === 'final' ? 'completed' : 'pending',
-        hasFlag: doc.status !== 'final',
-        attachedNote: doc.patient_data?.provider_notes || '',
-        documentId: doc.id,
+        patientName: appointment.patient_name || 'Unknown',
+        appointmentType: appointment.appointment_type || 'Appointment',
+        location: appointment.location || 'Virtual',
+        status,
+        hasFlag: Boolean(appointment.has_flag || appointment.notes_pending),
+        attachedNote: appointment.attached_note || '',
+        documentId: appointment.document_id || undefined,
       };
     });
 
