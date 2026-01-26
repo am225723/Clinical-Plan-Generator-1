@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { requireDoctor } from '@/lib/auth';
 import { createServerClient } from '@/lib/supabase';
 
 interface IcdCodeSummary {
@@ -12,73 +13,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const supabase = createServerClient({ req, res } as any);
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session) {
+  const authResult = await requireDoctor({ req, res } as any);
+  if ('redirect' in authResult) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', session.user.id)
-    .single();
-
-  if (!profile || (profile.role !== 'doctor' && profile.role !== 'admin')) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
+  const { user } = authResult.props;
+  const supabase = createServerClient({ req, res } as any);
 
   try {
-    const { data: documents, error } = await supabase
-      .from('saved_documents')
-      .select('created_at, status, generated_content')
-      .eq('doctor_id', session.user.id);
+    const [{ data: stats, error: statsError }, { data: topIcdCodesRaw, error: icdError }] =
+      await Promise.all([
+        supabase
+          .from('doctor_dashboard_stats')
+          .select('pending_notes_count, documents_this_week, documents_this_month')
+          .eq('doctor_id', user.id)
+          .maybeSingle(),
+        supabase.rpc('get_top_icd_codes', {
+          p_doctor_id: user.id,
+          p_limit: 5,
+        }),
+      ]);
 
-    if (error) throw error;
+    if (statsError) throw statsError;
+    if (icdError) throw icdError;
 
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const icdMap = new Map<string, IcdCodeSummary>();
-
-    let documentsThisWeek = 0;
-    let documentsThisMonth = 0;
-    let pendingNotesCount = 0;
-
-    (documents || []).forEach((doc: any) => {
-      const createdAt = new Date(doc.created_at);
-      if (createdAt >= startOfWeek) documentsThisWeek += 1;
-      if (createdAt >= startOfMonth) documentsThisMonth += 1;
-      if (doc.status !== 'final') pendingNotesCount += 1;
-
-      const diagnosis = doc.generated_content?.diagnosis || [];
-      diagnosis.forEach((item: { code?: string; name?: string }) => {
-        if (!item.code) return;
-        const existing = icdMap.get(item.code);
-        if (existing) {
-          existing.count += 1;
-        } else {
-          icdMap.set(item.code, {
-            code: item.code,
-            description: item.name || 'Unknown diagnosis',
-            count: 1,
-          });
-        }
-      });
-    });
-
-    const topIcdCodes = Array.from(icdMap.values())
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+    const topIcdCodes: IcdCodeSummary[] = (topIcdCodesRaw || []).map((item: any) => ({
+      code: item.icd_code,
+      description: item.icd_description,
+      count: Number(item.usage_count ?? 0),
+    }));
 
     return res.status(200).json({
-      pendingNotesCount,
-      documentsThisWeek,
-      documentsThisMonth,
+      pendingNotesCount: stats?.pending_notes_count ?? 0,
+      documentsThisWeek: stats?.documents_this_week ?? 0,
+      documentsThisMonth: stats?.documents_this_month ?? 0,
       topIcdCodes,
     });
   } catch (error: any) {
