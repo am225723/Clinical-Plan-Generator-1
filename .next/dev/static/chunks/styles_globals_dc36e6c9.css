@@ -8446,6 +8446,13 @@
   }
 
   @media (prefers-color-scheme: dark) {
+    .dark\:invert-0 {
+      --tw-invert: invert(0%);
+      filter: var(--tw-blur, ) var(--tw-brightness, ) var(--tw-contrast, ) var(--tw-grayscale, ) var(--tw-hue-rotate, ) var(--tw-invert, ) var(--tw-saturate, ) var(--tw-sepia, ) var(--tw-drop-shadow, );
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
     @media (hover: hover) {
       .dark\:group-hover\:bg-gray-800:is(:where(.group):hover *) {
         background-color: var(--color-gray-800);

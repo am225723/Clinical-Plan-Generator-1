@@ -496,16 +496,25 @@ export function TemplateConfig({
           <div className="glass-panel rounded-2xl p-4 space-y-4">
             <div>
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Provider Signature Line
+                Provider Signature
               </p>
-              <Input
-                value={providerSignature}
-                onChange={(e) => setProviderSignature(e.target.value)}
-                placeholder="Dr. Douglas Zelisko, M.D."
-                className="bg-card/50 dark:bg-card/30 border-border rounded-xl"
-              />
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Your name/credentials that appear above the signature line
+              <div className="bg-card/50 dark:bg-card/30 rounded-xl p-4 border border-border">
+                <img 
+                  src="/provider-signature.png" 
+                  alt="Provider Signature" 
+                  className="h-12 object-contain mx-auto invert dark:invert-0"
+                />
+                <div className="border-t border-border mt-3 pt-2 text-center">
+                  <Input
+                    value={providerSignature}
+                    onChange={(e) => setProviderSignature(e.target.value)}
+                    placeholder="Dr. Douglas Zelisko, M.D."
+                    className="bg-transparent border-none text-center text-sm focus-visible:ring-0"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1 text-center">
+                Your signature will appear on all generated documents
               </p>
             </div>
 
