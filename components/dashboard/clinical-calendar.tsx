@@ -4,6 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { useSupabase } from '@/pages/_app';
+import { edgeFunctions } from '@/lib/edge-functions';
 
 interface Appointment {
   id: string;
@@ -42,6 +44,7 @@ interface CalendarImportRecord {
 }
 
 export function ClinicalCalendar({ onGenerateForAppointment }: ClinicalCalendarProps) {
+  const { supabase } = useSupabase();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [importedAppointments, setImportedAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
@@ -52,10 +55,8 @@ export function ClinicalCalendar({ onGenerateForAppointment }: ClinicalCalendarP
   useEffect(() => {
     const fetchImportedAppointments = async () => {
       try {
-        const response = await fetch('/api/dashboard/calendar-imports');
-        if (!response.ok) throw new Error('Failed to load imported events');
-        const data = await response.json();
-        const mapped = (data.events || []).map(mapImportRecordToAppointment);
+        const data = await edgeFunctions.dashboard.calendarImports(supabase);
+        const mapped = (data || []).map(mapImportRecordToAppointment);
         setImportedAppointments(mapped);
       } catch (error) {
         console.error('Failed to fetch imported events:', error);
@@ -63,22 +64,20 @@ export function ClinicalCalendar({ onGenerateForAppointment }: ClinicalCalendarP
     };
 
     void fetchImportedAppointments();
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
-        const response = await fetch('/api/dashboard/appointments');
-        if (!response.ok) throw new Error('Failed to load appointments');
-        const data = await response.json();
-        setAppointments(data.appointments || []);
+        const data = await edgeFunctions.dashboard.appointments(supabase);
+        setAppointments(data || []);
       } catch (error) {
         console.error('Failed to fetch appointments:', error);
       }
     };
 
     void fetchAppointments();
-  }, []);
+  }, [supabase]);
 
   const handleAppointmentClick = (apt: Appointment) => {
     setSelectedAppointment(apt);
@@ -131,14 +130,7 @@ export function ClinicalCalendar({ onGenerateForAppointment }: ClinicalCalendarP
       const deduped = dedupeCalendarEvents(events, importedAppointments);
       if (deduped.length === 0) return;
 
-      const response = await fetch('/api/dashboard/calendar-imports', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ events: deduped }),
-      });
-
-      if (!response.ok) throw new Error('Failed to save imported events');
-      const data = await response.json();
+      const data = await edgeFunctions.dashboard.importCalendar(supabase, deduped);
       const mapped = (data.events || []).map(mapImportRecordToAppointment);
       setImportedAppointments((prev) => mergeAppointments(prev, mapped));
     } catch (error) {

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FileText, AlertCircle, Activity, TrendingUp } from 'lucide-react';
+import { useSupabase } from '@/pages/_app';
+import { edgeFunctions } from '@/lib/edge-functions';
 
 interface IcdCode {
   code: string;
@@ -15,6 +17,7 @@ interface DashboardStats {
 }
 
 export function PracticeStats() {
+  const { supabase } = useSupabase();
   const [stats, setStats] = useState<DashboardStats>({
     pendingNotesCount: 0,
     documentsThisWeek: 0,
@@ -27,14 +30,12 @@ export function PracticeStats() {
     const fetchStats = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/dashboard/summary');
-        if (!response.ok) throw new Error('Failed to load stats');
-        const data = await response.json();
+        const data = await edgeFunctions.dashboard.summary(supabase);
         setStats({
-          pendingNotesCount: data.pendingNotesCount ?? 0,
-          documentsThisWeek: data.documentsThisWeek ?? 0,
-          documentsThisMonth: data.documentsThisMonth ?? 0,
-          topIcdCodes: data.topIcdCodes ?? [],
+          pendingNotesCount: data.pending_notes_count ?? 0,
+          documentsThisWeek: data.documents_this_week ?? 0,
+          documentsThisMonth: data.documents_this_month ?? 0,
+          topIcdCodes: data.top_icd_codes ?? [],
         });
       } catch (error) {
         console.error('Failed to fetch stats:', error);
@@ -44,7 +45,7 @@ export function PracticeStats() {
     };
 
     void fetchStats();
-  }, []);
+  }, [supabase]);
 
   const statCards = [
     {

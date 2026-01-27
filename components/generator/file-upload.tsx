@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import { FileText, Mic, Video, X, File as FileIcon, Cloud, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useSupabase } from '@/pages/_app';
+import { edgeFunctions } from '@/lib/edge-functions';
 
 interface UploadedFile {
   id: string;
@@ -44,6 +46,7 @@ function getFileType(file: File): 'pdf' | 'text' | 'audio' | 'video' {
 }
 
 export function FileUpload({ files, onFilesChange }: FileUploadProps) {
+  const { supabase } = useSupabase();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeType, setActiveType] = useState<'pdf' | 'text' | 'audio' | 'video' | null>(null);
   const [driveLink, setDriveLink] = useState('');
@@ -110,16 +113,7 @@ export function FileUpload({ files, onFilesChange }: FileUploadProps) {
     setDriveError('');
     setDriveLoading(true);
     try {
-      const response = await fetch('/api/google-drive-import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId }),
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Unable to fetch Google Drive file. Ensure sharing is set to anyone with the link.');
-      }
-      const data = await response.json();
+      const data = await edgeFunctions.googleDriveImport(supabase, fileId);
       const blob = base64ToBlob(data.data, data.contentType || 'application/octet-stream');
       const file = new File([blob], data.fileName || `google-drive-${fileId}`, { type: data.contentType || 'application/octet-stream' });
       const newFile: UploadedFile = {

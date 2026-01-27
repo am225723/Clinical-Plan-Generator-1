@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Users, Search, FileText } from 'lucide-react';
 import { BottomNav } from '@/components/ui/bottom-nav';
+import { useSupabase } from './_app';
+import { edgeFunctions } from '@/lib/edge-functions';
 
 interface PatientSummary {
   name: string;
@@ -17,6 +19,7 @@ interface PatientSummary {
 }
 
 export default function PatientsPage() {
+  const { supabase } = useSupabase();
   const router = useRouter();
   const [patients, setPatients] = useState<PatientSummary[]>([]);
   const [search, setSearch] = useState('');
@@ -26,9 +29,7 @@ export default function PatientsPage() {
     const fetchPatients = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/documents?limit=100');
-        if (!response.ok) throw new Error('Failed to load patients');
-        const data = await response.json();
+        const data = await edgeFunctions.documents.list(supabase, { limit: 100 });
         const map = new Map<string, PatientSummary>();
         (data.documents || []).forEach((doc: any) => {
           const name = doc.patient_name || doc.patient_data?.patient_name || 'Unknown';
@@ -57,7 +58,7 @@ export default function PatientsPage() {
     };
 
     void fetchPatients();
-  }, []);
+  }, [supabase]);
 
   const filteredPatients = patients.filter((patient) =>
     patient.name.toLowerCase().includes(search.toLowerCase())

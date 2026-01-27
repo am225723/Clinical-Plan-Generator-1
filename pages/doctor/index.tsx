@@ -644,35 +644,26 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
       const lineHeightValue = formatSettings.lineHeight === 'compact' ? 1.2 : 1.5;
       const sectionOrder = getSectionOrder(selectedTemplate);
       const guardrails = selectedTemplate?.pdf_config?.guardrails || [];
-      const response = await fetch('/api/generate-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          patientData,
-          treatmentPlan: generatedPlan,
-          doctorSettings,
-          formatOverrides: {
-            font_size: formatSettings.fontSize,
-            line_height: lineHeightValue,
-            font_weight: formatSettings.fontWeight,
-          },
-          sectionOrder,
-          guardrails,
-        }),
+      const data = await edgeFunctions.generate.pdf(supabase, {
+        patientData,
+        treatmentPlan: generatedPlan,
+        doctorSettings,
+        formatOverrides: {
+          font_size: formatSettings.fontSize,
+          line_height: lineHeightValue,
+          font_weight: formatSettings.fontWeight,
+        },
+        sectionOrder,
+        guardrails,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (data.missing_fields) {
-          toast({ 
-            title: 'Missing Fields', 
-            description: `Please fill in: ${data.missing_fields.join(', ')}`, 
-            variant: 'destructive' 
-          });
-          return;
-        }
-        throw new Error(data.error);
+      if (data.missing_fields) {
+        toast({ 
+          title: 'Missing Fields', 
+          description: `Please fill in: ${data.missing_fields.join(', ')}`, 
+          variant: 'destructive' 
+        });
+        return;
       }
 
       const printWindow = window.open('', '_blank');
@@ -704,27 +695,18 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
       const lineHeightValue = formatSettings.lineHeight === 'compact' ? 1.2 : 1.5;
       const sectionOrder = getSectionOrder(selectedTemplate);
       const guardrails = selectedTemplate?.pdf_config?.guardrails || [];
-      const response = await fetch('/api/generate-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          patientData,
-          treatmentPlan: generatedPlan,
-          doctorSettings,
-          formatOverrides: {
-            font_size: formatSettings.fontSize,
-            line_height: lineHeightValue,
-            font_weight: formatSettings.fontWeight,
-          },
-          sectionOrder,
-          guardrails,
-        }),
+      const data = await edgeFunctions.generate.pdf(supabase, {
+        patientData,
+        treatmentPlan: generatedPlan,
+        doctorSettings,
+        formatOverrides: {
+          font_size: formatSettings.fontSize,
+          line_height: lineHeightValue,
+          font_weight: formatSettings.fontWeight,
+        },
+        sectionOrder,
+        guardrails,
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate PDF preview');
-      }
 
       const previewWindow = window.open('', '_blank');
       if (previewWindow) {
