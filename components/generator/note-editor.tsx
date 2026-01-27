@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { useSupabase } from '@/pages/_app';
+import { edgeFunctions } from '@/lib/edge-functions';
 
 interface NoteEditorProps {
   content: string;
@@ -32,6 +34,7 @@ export function NoteEditor({
   detailLevel: propDetailLevel = 50,
   onDetailLevelChange,
 }: NoteEditorProps) {
+  const { supabase } = useSupabase();
   const [localDetailLevel, setLocalDetailLevel] = useState(propDetailLevel);
   const detailLevel = propDetailLevel;
   
@@ -129,18 +132,10 @@ export function NoteEditor({
     setIsChatLoading(true);
     setChatError(null);
     try {
-      const response = await fetch('/api/refine-note', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: nextMessages,
-          noteContent: content,
-        }),
+      const data = await edgeFunctions.generate.refineNote(supabase, {
+        messages: nextMessages,
+        noteContent: content,
       });
-      if (!response.ok) {
-        throw new Error('Failed to get chat response');
-      }
-      const data = await response.json();
       const assistantMessage =
         typeof data?.assistantMessage === 'string' && data.assistantMessage.trim()
           ? data.assistantMessage

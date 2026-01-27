@@ -4,7 +4,7 @@
 
 A clinical treatment plan generator that converts raw clinical inputs (intake forms, session transcripts, assessment scores, provider notes) into structured, print-ready mental health treatment plans. The application uses Perplexity AI to generate comprehensive psychiatric documentation including diagnoses with ICD-10/DSM-5-TR codes, SMART treatment goals, and medical decision-making documentation.
 
-**Current Status**: Next.js Pages Router with Supabase Auth, role-based access control (admin/doctor), secure API routes, document templates with custom AI prompts per template type, document history with search, and advanced glass-morphism UI with dark/light mode.
+**Current Status**: Next.js Pages Router with Supabase Auth, role-based access control (admin/doctor), **Supabase Edge Functions for all backend APIs**, document templates with custom AI prompts per template type, document history with search, and advanced glass-morphism UI with dark/light mode.
 
 ## User Preferences
 
@@ -35,11 +35,12 @@ Preferred communication style: Simple, everyday language.
 - **Theme System**: ThemeProvider in `lib/theme.tsx` with localStorage persistence
 
 ### Backend Architecture
-- **Runtime**: Node.js with Next.js custom server
+- **Runtime**: Supabase Edge Functions (Deno) for all API endpoints
 - **Language**: TypeScript with ESM modules
-- **API Pattern**: Next.js API routes under `/pages/api/*`
+- **API Pattern**: Supabase Edge Functions under `/supabase/functions/*`
 - **AI Integration**: Perplexity AI for treatment plan generation
-- **Server Entry**: `server/index.ts` runs a custom Next.js server
+- **Frontend Wrapper**: `lib/edge-functions.ts` provides typed API for calling Edge Functions
+- **Server Entry**: `server/index.ts` runs Next.js custom server (frontend only)
 
 ### Pages Structure
 - `/pages/index.tsx` - Root page (redirects to admin or doctor based on role)
@@ -47,7 +48,7 @@ Preferred communication style: Simple, everyday language.
 - `/pages/admin/index.tsx` - Admin dashboard with user management
 - `/pages/doctor/index.tsx` - Doctor dashboard with tabs: Dashboard, Generate, History
 - `/pages/settings.tsx` - Settings page for AI prompts and document configuration
-- `/pages/api/*` - API routes for treatment plan generation, settings, admin, and PDF
+- `/supabase/functions/*` - Supabase Edge Functions for all backend APIs
 
 ### Component Structure
 ```
@@ -101,14 +102,23 @@ components/
 - **Supabase PostgreSQL**: Auth and profiles database
   - Connection via `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` secrets
 
-### API Routes (Next.js)
-- `/api/admin/create-user` - Create new doctor users (admin only)
-- `/api/admin/update-user` - Update user profiles (admin only)
-- `/api/settings/get` - Get app/document settings
-- `/api/settings/set` - Update settings (role-based)
-- `/api/upload-logo` - Get signed URL for logo upload
-- `/api/generate-pdf` - Generate treatment plan PDF HTML
-- `/api/generate-treatment-plan` - AI-powered treatment plan generation
+### Supabase Edge Functions
+All backend APIs are now Supabase Edge Functions (Deno runtime):
+- `admin-create-user` - Create new doctor users (admin only)
+- `admin-update-user` - Update user profiles (admin only)
+- `settings` - Get/set app and document settings
+- `templates` - CRUD operations for document templates
+- `documents` - CRUD operations for clinical documents
+- `dashboard-summary` - Practice overview stats
+- `dashboard-appointments` - Appointment list
+- `dashboard-calendar-imports` - Import calendar events from iCal
+- `generate-treatment-plan` - AI-powered document generation
+- `generate-pdf` - Generate printable PDF HTML
+- `transcriptions` - Audio/video transcription
+- `upload-logo` - Get signed URL for logo upload
+- `google-drive-import` - Import files from Google Drive
+
+Frontend calls use `lib/edge-functions.ts` typed wrapper for all Edge Function interactions.
 
 ### Key NPM Packages
 - `next`: Next.js framework

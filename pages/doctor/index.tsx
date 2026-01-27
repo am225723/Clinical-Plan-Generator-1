@@ -256,31 +256,31 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
   };
 
   const pollTranscriptionJob = async (jobId: string, fileName: string) => {
-    const response = await fetch(`/api/transcriptions/${jobId}`);
-    if (!response.ok) {
+    try {
+      const data = await edgeFunctions.transcriptions.get(supabase, jobId);
+      if (data.status === 'completed' && data.transcript) {
+        appendTranscript(fileName, data.transcript);
+        toast({ title: 'Transcription ready', description: `${fileName} transcript added.` });
+        if (transcriptionPollers.current[jobId]) {
+          clearInterval(transcriptionPollers.current[jobId]);
+          delete transcriptionPollers.current[jobId];
+        }
+      }
+      if (data.status === 'failed') {
+        toast({
+          title: 'Transcription failed',
+          description: data.error || `Unable to transcribe ${fileName}.`,
+          variant: 'destructive',
+        });
+        if (transcriptionPollers.current[jobId]) {
+          clearInterval(transcriptionPollers.current[jobId]);
+          delete transcriptionPollers.current[jobId];
+        }
+      }
+      return data;
+    } catch (error) {
       throw new Error('Unable to fetch transcription status.');
     }
-    const data = await response.json();
-    if (data.status === 'completed' && data.transcript) {
-      appendTranscript(fileName, data.transcript);
-      toast({ title: 'Transcription ready', description: `${fileName} transcript added.` });
-      if (transcriptionPollers.current[jobId]) {
-        clearInterval(transcriptionPollers.current[jobId]);
-        delete transcriptionPollers.current[jobId];
-      }
-    }
-    if (data.status === 'failed') {
-      toast({
-        title: 'Transcription failed',
-        description: data.error || `Unable to transcribe ${fileName}.`,
-        variant: 'destructive',
-      });
-      if (transcriptionPollers.current[jobId]) {
-        clearInterval(transcriptionPollers.current[jobId]);
-        delete transcriptionPollers.current[jobId];
-      }
-    }
-    return data;
   };
 
   const startPollingTranscription = (jobId: string, fileName: string) => {

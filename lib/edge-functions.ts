@@ -97,6 +97,8 @@ export const edgeFunctions = {
       callEdgeFunction(supabase, 'generate-treatment-plan', { method: 'POST', body: data }),
     pdf: (supabase: SupabaseClient, data: any) =>
       callEdgeFunction(supabase, 'pdf-generate', { method: 'POST', body: data }),
+    refineNote: (supabase: SupabaseClient, data: { messages: any[]; noteContent: string }) =>
+      callEdgeFunction(supabase, 'refine-note', { method: 'POST', body: data }),
   },
   transcriptions: {
     get: (supabase: SupabaseClient, id: string) =>
