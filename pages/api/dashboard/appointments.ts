@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createServerClient } from '@/lib/supabase';
+import { createApiClient } from '@/lib/supabase-api';
 import { requireDoctor } from '@/lib/auth';
 
 interface Appointment {
@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { user } = (authResult as { props: { user: { id: string } } }).props;
-  const supabase = createServerClient({ req, res } as any);
+  const supabase = createApiClient(req, res);
 
   try {
     const nowIso = new Date().toISOString();

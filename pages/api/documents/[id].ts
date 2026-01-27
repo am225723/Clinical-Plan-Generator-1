@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createServerClient } from '@/lib/supabase';
+import { createApiClient } from '@/lib/supabase-api';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Document ID is required' });
   }
 
-  const supabase = createServerClient({ req, res } as any);
+  const supabase = createApiClient(req, res);
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {

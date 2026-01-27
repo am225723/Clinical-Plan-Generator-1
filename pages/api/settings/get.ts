@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createServerClient } from '@/lib/supabase';
+import { createApiClient } from '@/lib/supabase-api';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const supabase = createServerClient({ req, res } as any);
+    const supabase = createApiClient(req, res);
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session) {

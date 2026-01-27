@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createServerClient } from '@/lib/supabase';
+import { createApiClient } from '@/lib/supabase-api';
 
 const extractFileName = (response: Response, fallback: string) => {
   const disposition = response.headers.get('content-disposition') || '';
@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const supabase = createServerClient({ req, res } as any);
+  const supabase = createApiClient(req, res);
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {

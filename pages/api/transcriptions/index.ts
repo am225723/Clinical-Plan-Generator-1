@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { randomUUID } from 'crypto';
-import { createServerClient } from '@/lib/supabase';
+import { createApiClient } from '@/lib/supabase-api';
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const supabase = createServerClient({ req, res } as any);
+  const supabase = createApiClient(req, res);
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
