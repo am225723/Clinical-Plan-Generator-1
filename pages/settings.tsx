@@ -6,7 +6,6 @@ import { requireAuth } from '@/lib/auth';
 import { Profile, DoctorDocumentSettings } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
 import { TemplateConfig } from '@/components/templates/template-config';
-import { BottomNav } from '@/components/ui/bottom-nav';
 import { useToast } from '@/hooks/use-toast';
 
 interface DocumentTemplate {
@@ -37,7 +36,6 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
   });
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
-  const [headerTitle, setHeaderTitle] = useState('');
 
   useEffect(() => {
     loadSettings();
@@ -53,7 +51,6 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
 
       if (data.doctorSettings) {
         setDoctorSettings(data.doctorSettings);
-        setHeaderTitle(data.doctorSettings.header_config?.text || '');
       }
     } catch (err) {
       console.error('Failed to load settings:', err);
@@ -134,13 +131,31 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
     }
   };
 
-  const handleHeaderTitleChange = async (title: string) => {
-    setHeaderTitle(title);
+  const handleSaveHeaderFooter = async (configs: {
+    header: { text: string; alignment: 'left' | 'center' | 'right' };
+    footer: { text: string; alignment: 'left' | 'center' | 'right' };
+  }) => {
     const updatedSettings = {
       ...doctorSettings,
-      header_config: { ...doctorSettings.header_config, text: title }
+      header_config: configs.header,
+      footer_config: configs.footer,
     };
     setDoctorSettings(updatedSettings);
+
+    const response = await fetch('/api/settings/set', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'doctor',
+        settings: updatedSettings,
+      }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to save header and footer');
+    }
+
   };
 
   if (loading) {
@@ -162,6 +177,9 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
         onBack={() => router.push('/doctor')}
         logoUrl={doctorSettings.logo_url || undefined}
         onLogoUpload={handleLogoUpload}
+        headerConfig={(doctorSettings.header_config as { text: string; alignment: 'left' | 'center' | 'right' }) || { text: '', alignment: 'center' }}
+        footerConfig={(doctorSettings.footer_config as { text: string; alignment: 'left' | 'center' | 'right' }) || { text: '', alignment: 'center' }}
+        onSaveHeaderFooter={handleSaveHeaderFooter}
       />
     </>
   );

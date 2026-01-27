@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react';
-import { FileText, Mic, Video, Upload, X, File } from 'lucide-react';
+import { FileText, Mic, Video, X, File, Cloud, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface UploadedFile {
   id: string;
@@ -44,6 +46,9 @@ function getFileType(file: File): 'pdf' | 'text' | 'audio' | 'video' {
 export function FileUpload({ files, onFilesChange }: FileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeType, setActiveType] = useState<'pdf' | 'text' | 'audio' | 'video' | null>(null);
+  const [driveLink, setDriveLink] = useState('');
+  const [driveError, setDriveError] = useState('');
+  const [driveLoading, setDriveLoading] = useState(false);
 
   const handleFileSelect = (type: 'pdf' | 'text' | 'audio' | 'video') => {
     setActiveType(type);
@@ -86,6 +91,62 @@ export function FileUpload({ files, onFilesChange }: FileUploadProps) {
     onFilesChange(files.filter((f) => f.id !== id));
   };
 
+  const extractDriveFileId = (link: string) => {
+    const trimmed = link.trim();
+    if (!trimmed) return null;
+    const match = trimmed.match(/\/d\/([a-zA-Z0-9_-]+)/) || trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match?.[1]) return match[1];
+    if (/^[a-zA-Z0-9_-]{10,}$/.test(trimmed)) return trimmed;
+    return null;
+  };
+
+  const handleDriveImport = async () => {
+    const fileId = extractDriveFileId(driveLink);
+    if (!fileId) {
+      setDriveError('Enter a valid Google Drive share link or file ID.');
+      return;
+    }
+
+    setDriveError('');
+    setDriveLoading(true);
+    try {
+      const response = await fetch('/api/google-drive-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileId }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Unable to fetch Google Drive file. Ensure sharing is set to anyone with the link.');
+      }
+      const data = await response.json();
+      const blob = base64ToBlob(data.data, data.contentType || 'application/octet-stream');
+      const file = new File([blob], data.fileName || `google-drive-${fileId}`, { type: data.contentType || 'application/octet-stream' });
+      const newFile: UploadedFile = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: file.name,
+        size: file.size,
+        type: getFileType(file),
+        file,
+      };
+      onFilesChange([...files, newFile]);
+      setDriveLink('');
+    } catch (error: any) {
+      setDriveError(error?.message || 'Unable to import from Google Drive.');
+    } finally {
+      setDriveLoading(false);
+    }
+  };
+
+  const base64ToBlob = (data: string, contentType: string) => {
+    const byteCharacters = atob(data);
+    const byteArrays = new Uint8Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i += 1) {
+      byteArrays[i] = byteCharacters.charCodeAt(i);
+    }
+    return new Blob([byteArrays], { type: contentType });
+  };
+
   const uploadButtons = [
     { type: 'pdf' as const, icon: <FileText className="h-6 w-6" />, label: 'PDF' },
     { type: 'text' as const, icon: <File className="h-6 w-6" />, label: 'Text' },
@@ -121,6 +182,36 @@ export function FileUpload({ files, onFilesChange }: FileUploadProps) {
             <span className="text-[10px] font-medium text-muted-foreground">{label}</span>
           </button>
         ))}
+      </div>
+
+      <div className="rounded-2xl border border-border/60 bg-card/40 dark:bg-card/20 p-4 space-y-3">
+        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <Cloud className="h-4 w-4 text-primary" />
+          Google Drive Import
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Input
+            value={driveLink}
+            onChange={(e) => setDriveLink(e.target.value)}
+            placeholder="Paste Google Drive share link or file ID"
+            className="bg-card/50 dark:bg-card/30 border-border rounded-xl text-xs"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleDriveImport}
+            disabled={!driveLink.trim() || driveLoading}
+            className="rounded-xl border-primary/40 text-primary hover:bg-primary/10"
+          >
+            {driveLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Import'}
+          </Button>
+        </div>
+        {driveError && (
+          <p className="text-[10px] text-rose-500">{driveError}</p>
+        )}
+        <p className="text-[10px] text-muted-foreground">
+          Supports publicly shared files. For private files, download locally before uploading.
+        </p>
       </div>
 
       {files.length > 0 && (
