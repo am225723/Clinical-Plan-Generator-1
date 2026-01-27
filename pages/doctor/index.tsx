@@ -938,7 +938,52 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
             <TabsContent value="generate">
           <div className="max-w-md mx-auto lg:max-w-none lg:grid lg:grid-cols-2 gap-6">
             <div className="space-y-5">
-              {generatedPlan && (
+              {!selectedTemplate && (
+                <div className="glass-panel rounded-3xl p-6 shadow-lg">
+                  <div className="text-center mb-6">
+                    <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                      <FileText className="h-7 w-7 text-primary" />
+                    </div>
+                    <h2 className="text-lg font-bold">Select Note Type</h2>
+                    <p className="text-sm text-muted-foreground mt-1">Choose the type of clinical note to create</p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3">
+                    {[
+                      { type: 'initial_eval', name: 'Initial Evaluation', desc: 'Comprehensive psychiatric intake assessment' },
+                      { type: 'progress_note', name: 'Progress Note', desc: 'SOAP format session documentation' },
+                      { type: 'treatment_plan', name: 'Treatment Plan', desc: 'SMART goals and interventions' },
+                      { type: 'psych_note', name: 'Psychiatric Note', desc: 'Mental status exam and assessment' },
+                      { type: 'discharge_summary', name: 'Discharge Summary', desc: 'Treatment course and aftercare' },
+                    ].map((noteType) => (
+                      <button
+                        key={noteType.type}
+                        onClick={() => {
+                          const template = templates.find(t => t.template_type === noteType.type) || {
+                            id: noteType.type,
+                            name: noteType.name,
+                            template_type: noteType.type,
+                            ai_prompt: '',
+                            is_default: false,
+                          };
+                          setSelectedTemplate(template);
+                        }}
+                        className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-card/50 hover:bg-primary/5 hover:border-primary/30 transition-all text-left group"
+                        data-testid={`note-type-${noteType.type}`}
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                          <Sparkles className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-sm">{noteType.name}</h3>
+                          <p className="text-xs text-muted-foreground">{noteType.desc}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedTemplate && generatedPlan && (
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     <div className="flex flex-col">
@@ -967,13 +1012,26 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                 </div>
               )}
               
+              {selectedTemplate && (
               <div className="glass-panel rounded-3xl p-5 shadow-lg relative overflow-hidden">
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
                 <div className="flex justify-between items-center mb-5 border-b border-border/50 pb-3 relative z-10">
-                  <h2 className="text-lg font-semibold flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary" />
-                    Patient Information
-                  </h2>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSelectedTemplate(null)}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                        data-testid="button-back-to-notes"
+                      >
+                        ←
+                      </button>
+                      <h2 className="text-lg font-semibold flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-primary" />
+                        {selectedTemplate?.name || 'Patient Information'}
+                      </h2>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5 ml-6">Enter patient details for this {selectedTemplate?.template_type?.replace(/_/g, ' ')}</p>
+                  </div>
                 </div>
                 <div className="space-y-4 relative z-10">
                   <div className="grid grid-cols-2 gap-4">
@@ -1053,7 +1111,9 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                   )}
                 </div>
               </div>
+              )}
 
+              {selectedTemplate && (
               <div className="glass-panel rounded-3xl p-5 shadow-lg space-y-5">
                 <FileUpload files={uploadedFiles} onFilesChange={setUploadedFiles} />
                 
@@ -1068,27 +1128,10 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                   onProviderNotesChange={(v) => setClinicalInputs({ ...clinicalInputs, provider_notes: v })}
                 />
               </div>
+              )}
 
+              {selectedTemplate && (
               <div className="space-y-4">
-                {templates.length > 0 && (
-                  <div className="flex overflow-x-auto gap-2 no-scrollbar pb-1 -mx-1 px-1">
-                    {templates.map((template) => (
-                      <button
-                        key={template.id}
-                        onClick={() => setSelectedTemplate(template)}
-                        className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                          selectedTemplate?.id === template.id
-                            ? 'bg-primary/10 border border-primary text-primary shadow-[0_0_10px_rgba(19,236,200,0.2)]'
-                            : 'bg-card/50 border border-border text-muted-foreground hover:bg-card hover:text-foreground'
-                        }`}
-                        data-testid={`template-pill-${template.id}`}
-                      >
-                        {template.name}
-                        {template.is_default && ' *'}
-                      </button>
-                    ))}
-                  </div>
-                )}
                 
                 <div className="glass-panel rounded-2xl p-4 flex justify-between items-center border border-border/50">
                   <div className="flex items-center gap-3">
@@ -1179,6 +1222,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
                   </div>
                 </button>
               </div>
+              )}
 
               {showValidation && (
                 <ValidationScreen
