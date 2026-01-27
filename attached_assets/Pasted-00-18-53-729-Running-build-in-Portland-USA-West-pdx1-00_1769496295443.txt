@@ -1,0 +1,32 @@
+00:18:53.729 Running build in Portland, USA (West) – pdx1
+00:18:53.729 Build machine configuration: 4 cores, 8 GB
+00:18:53.814 Cloning github.com/am225723/Clinical-Plan-Generator-1 (Branch: main, Commit: e51a9d5)
+00:19:36.520 Cloning completed: 42.705s
+00:19:36.699 Restored build cache from previous deployment (JCDSNzz4UxfN3q8KmNDxmgaxprXE)
+00:19:36.966 Running "vercel build"
+00:19:37.722 Vercel CLI 50.4.10
+00:19:38.913 Installing dependencies...
+00:19:40.221 
+00:19:40.222 up to date in 1s
+00:19:40.222 
+00:19:40.222 89 packages are looking for funding
+00:19:40.222   run `npm fund` for details
+00:19:40.250 Detected Next.js version: 16.1.4
+00:19:40.251 Running "next build"
+00:19:40.911 ▲ Next.js 16.1.4 (Turbopack)
+00:19:40.911 
+00:19:40.935   Running TypeScript ...
+00:19:47.996 Failed to compile.
+00:19:47.997 
+00:19:47.997 ./components/generator/file-upload.tsx:124:20
+00:19:47.997 Type error: 'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.
+00:19:47.997 
+00:19:47.997 [0m [90m 122 |[39m       [36mconst[39m data [33m=[39m [36mawait[39m response[33m.[39mjson()[33m;[39m
+00:19:47.997  [90m 123 |[39m       [36mconst[39m blob [33m=[39m base64ToBlob(data[33m.[39mdata[33m,[39m data[33m.[39mcontentType [33m||[39m [32m'application/octet-stream'[39m)[33m;[39m
+00:19:47.997 [31m[1m>[22m[39m[90m 124 |[39m       [36mconst[39m file [33m=[39m [36mnew[39m [33mFile[39m([blob][33m,[39m data[33m.[39mfileName [33m||[39m [32m`google-drive-${fileId}`[39m[33m,[39m { type[33m:[39m data[33m.[39mcontentType [33m||[39m [32m'application/octet-stream'[39m })[33m;[39m
+00:19:47.997  [90m     |[39m                    [31m[1m^[22m[39m
+00:19:47.997  [90m 125 |[39m       [36mconst[39m newFile[33m:[39m [33mUploadedFile[39m [33m=[39m {
+00:19:47.997  [90m 126 |[39m         id[33m:[39m [33mMath[39m[33m.[39mrandom()[33m.[39mtoString([35m36[39m)[33m.[39msubstr([35m2[39m[33m,[39m [35m9[39m)[33m,[39m
+00:19:47.998  [90m 127 |[39m         name[33m:[39m file[33m.[39mname[33m,[39m[0m
+00:19:48.029 Next.js build worker exited with code: 1 and signal: null
+00:19:48.042 Error: Command "next build" exited with 1
