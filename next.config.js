@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    allowedDevOrigins: ["*.replit.dev", "*.replit.app", "*.picard.replit.dev"]
+  },
   images: {
     remotePatterns: [
       {
