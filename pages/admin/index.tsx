@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useSupabase } from '../_app';
 import { requireAdmin } from '@/lib/auth';
 import { Profile } from '@/lib/supabase';
+import { edgeFunctions } from '@/lib/edge-functions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -66,18 +67,7 @@ export default function AdminDashboard({ user, profile }: AdminPageProps) {
     setSubmitting(true);
 
     try {
-      const response = await fetch('/api/admin/create-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create user');
-      }
-
+      await edgeFunctions.admin.createUser(supabase, formData);
       toast({ title: 'Success', description: 'User created successfully' });
       setCreateDialogOpen(false);
       setFormData({ email: '', password: '', full_name: '' });
@@ -94,18 +84,7 @@ export default function AdminDashboard({ user, profile }: AdminPageProps) {
     setSubmitting(true);
 
     try {
-      const response = await fetch('/api/admin/update-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: selectedUser.id, ...editFormData })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update user');
-      }
-
+      await edgeFunctions.admin.updateUser(supabase, { user_id: selectedUser.id, ...editFormData });
       toast({ title: 'Success', description: 'User updated successfully' });
       setEditDialogOpen(false);
       fetchUsers();

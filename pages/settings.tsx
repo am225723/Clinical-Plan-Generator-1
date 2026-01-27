@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useSupabase } from './_app';
 import { requireAuth } from '@/lib/auth';
 import { Profile, DoctorDocumentSettings } from '@/lib/supabase';
+import { edgeFunctions } from '@/lib/edge-functions';
 import { Loader2 } from 'lucide-react';
 import { TemplateConfig } from '@/components/templates/template-config';
 import { useToast } from '@/hooks/use-toast';
@@ -46,9 +47,7 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
     setLoading(true);
     
     try {
-      const response = await fetch('/api/settings/get');
-      const data = await response.json();
-
+      const data = await edgeFunctions.settings.get(supabase);
       if (data.doctorSettings) {
         setDoctorSettings(data.doctorSettings);
       }
@@ -61,11 +60,8 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
 
   const loadTemplates = async () => {
     try {
-      const response = await fetch('/api/templates');
-      if (response.ok) {
-        const data = await response.json();
-        setTemplates(data);
-      }
+      const data = await edgeFunctions.templates.list(supabase);
+      setTemplates(data);
     } catch (err) {
       console.error('Failed to load templates:', err);
     }
@@ -73,38 +69,25 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
 
   const handleSaveTemplate = async (template: DocumentTemplate) => {
     const isNew = !template.id || template.id === '' || template.id.startsWith('initial') || template.id.startsWith('soap') || template.id.startsWith('discharge');
-    const method = isNew ? 'POST' : 'PUT';
-    const url = isNew ? '/api/templates' : `/api/templates/${template.id}`;
+    const templateData = {
+      name: template.name,
+      template_type: template.template_type,
+      ai_prompt: template.ai_prompt,
+      is_default: template.is_default,
+      pdf_config: template.pdf_config,
+    };
 
-    const response = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: template.name,
-        template_type: template.template_type,
-        ai_prompt: template.ai_prompt,
-        is_default: template.is_default,
-        pdf_config: template.pdf_config,
-      }),
-    });
-
-    if (!response.ok) throw new Error('Failed to save template');
+    if (isNew) {
+      await edgeFunctions.templates.create(supabase, templateData);
+    } else {
+      await edgeFunctions.templates.update(supabase, template.id, templateData);
+    }
     loadTemplates();
   };
 
   const handleLogoUpload = async (file: File) => {
     try {
-      const response = await fetch('/api/upload-logo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name, contentType: file.type })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to get upload URL');
-      }
+      const data = await edgeFunctions.uploadLogo(supabase, { filename: file.name, contentType: file.type });
 
       const uploadResponse = await fetch(data.signedUrl, {
         method: 'PUT',
@@ -115,16 +98,6 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
       if (!uploadResponse.ok) throw new Error('Upload failed');
 
       setDoctorSettings({ ...doctorSettings, logo_url: data.publicUrl });
-      
-      await fetch('/api/settings/set', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          type: 'doctor', 
-          settings: { ...doctorSettings, logo_url: data.publicUrl } 
-        })
-      });
-
       toast({ title: 'Uploaded', description: 'Logo uploaded successfully' });
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
@@ -142,20 +115,15 @@ export default function SettingsPage({ user, profile }: SettingsPageProps) {
     };
     setDoctorSettings(updatedSettings);
 
-    const response = await fetch('/api/settings/set', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'doctor',
-        settings: updatedSettings,
-      }),
-    });
-
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || 'Failed to save header and footer');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await supabase.from('doctor_document_settings').upsert({
+        doctor_id: session.user.id,
+        header_config: configs.header,
+        footer_config: configs.footer,
+        updated_at: new Date().toISOString(),
+      });
     }
-
   };
 
   if (loading) {

@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useSupabase } from '../_app';
 import { requireDoctor } from '@/lib/auth';
 import { Profile, getAppSettings, getDoctorSettings, DoctorDocumentSettings } from '@/lib/supabase';
+import { edgeFunctions } from '@/lib/edge-functions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -178,24 +179,12 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
           summary += '\n[Transcription submitted. Transcript will be added automatically when ready.]';
           try {
             const base64 = await fileToBase64(file.file);
-            const response = await fetch('/api/transcriptions', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                fileName: file.name,
-                fileType: file.type,
-                contentType: file.file.type || undefined,
-                data: base64,
-              }),
+            const data = await edgeFunctions.transcriptions.create(supabase, {
+              fileName: file.name,
+              fileType: file.type,
+              contentType: file.file.type || undefined,
+              data: base64,
             });
-
-            if (!response.ok) {
-              throw new Error('Failed to submit transcription.');
-            }
-
-            const data = await response.json();
             if (data.status === 'completed' && data.transcript) {
               appendTranscript(file.name, data.transcript);
             } else if (data.status === 'failed') {
@@ -348,13 +337,10 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
 
   const loadTemplates = async () => {
     try {
-      const response = await fetch('/api/templates');
-      if (response.ok) {
-        const data = await response.json();
-        setTemplates(data);
-        const defaultTemplate = data.find((t: DocumentTemplate) => t.is_default);
-        if (defaultTemplate) setSelectedTemplate(defaultTemplate);
-      }
+      const data = await edgeFunctions.templates.list(supabase);
+      setTemplates(data);
+      const defaultTemplate = data.find((t: DocumentTemplate) => t.is_default);
+      if (defaultTemplate) setSelectedTemplate(defaultTemplate);
     } catch (err) {
       console.error('Failed to load templates:', err);
     }
@@ -363,16 +349,9 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
   const loadDocuments = async (search?: string) => {
     setDocumentsLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (search) params.set('search', search);
-      params.set('limit', '20');
-      
-      const response = await fetch(`/api/documents?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSavedDocuments(data.documents);
-        setDocumentsTotal(data.total);
-      }
+      const data = await edgeFunctions.documents.list(supabase, { search, limit: 20 });
+      setSavedDocuments(data.documents);
+      setDocumentsTotal(data.total);
     } catch (err) {
       console.error('Failed to load documents:', err);
     }
@@ -391,23 +370,17 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
 
     setIsSaving(true);
     try {
-      const response = await fetch('/api/documents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          template_id: selectedTemplate?.id,
-          template_type: selectedTemplate?.template_type || 'treatment_plan',
-          patient_name: patientData.patient_name,
-          client_id: patientData.client_id,
-          date_of_service: patientData.date_of_service,
-          patient_data: patientData,
-          clinical_inputs: clinicalInputs,
-          generated_content: generatedPlan,
-          status: 'draft',
-        }),
+      await edgeFunctions.documents.create(supabase, {
+        template_id: selectedTemplate?.id,
+        template_type: selectedTemplate?.template_type || 'treatment_plan',
+        patient_name: patientData.patient_name,
+        client_id: patientData.client_id,
+        date_of_service: patientData.date_of_service,
+        patient_data: patientData,
+        clinical_inputs: clinicalInputs,
+        generated_content: generatedPlan,
+        status: 'draft',
       });
-
-      if (!response.ok) throw new Error('Failed to save document');
       
       toast({ title: 'Saved', description: 'Document saved to history' });
       loadDocuments();
@@ -434,8 +407,7 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
     if (!confirm('Are you sure you want to delete this document?')) return;
     
     try {
-      const response = await fetch(`/api/documents/${id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Failed to delete');
+      await edgeFunctions.documents.delete(supabase, id);
       toast({ title: 'Deleted', description: 'Document deleted' });
       loadDocuments(searchQuery);
     } catch (error) {
@@ -517,22 +489,17 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
     setIsGenerating(true);
     try {
       const customPrompt = buildPrompt(selectedTemplate?.ai_prompt, selectedTemplate);
-      const response = await fetch('/api/generate-treatment-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          inputs: { ...clinicalInputs, existing_content: editableContent },
-          patientData,
-          detailLevel: detailLevel <= 25 ? 'brief' : detailLevel <= 75 ? 'standard' : 'detailed',
-          aiAdjustment: instruction,
-          appendMode: true,
-          existingPlan: generatedPlan,
-          customPrompt,
-          templateType: selectedTemplate?.template_type || 'treatment_plan',
-        }),
+      const result = await edgeFunctions.generate.treatmentPlan(supabase, {
+        inputs: { ...clinicalInputs, existing_content: editableContent },
+        patientData,
+        detailLevel: detailLevel <= 25 ? 'brief' : detailLevel <= 75 ? 'standard' : 'detailed',
+        aiAdjustment: instruction,
+        appendMode: true,
+        existingPlan: generatedPlan,
+        customPrompt,
+        templateType: selectedTemplate?.template_type || 'treatment_plan',
       });
-      if (!response.ok) throw new Error('Failed to refine document');
-      const plan = await response.json();
+      const plan = result.treatment_plan || result;
       setGeneratedPlan(plan);
       setEditableContent(planToMarkdown(plan));
       toast({ title: 'Success', description: 'Document refined successfully' });
@@ -551,22 +518,17 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
         selectedTemplate?.ai_prompt || appSettings?.treatment_plan_prompt,
         selectedTemplate
       );
-      const response = await fetch('/api/generate-treatment-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          inputs: clinicalInputs,
-          patientData,
-          detailLevel: detailLevel <= 25 ? 'brief' : detailLevel <= 75 ? 'standard' : 'detailed',
-          aiAdjustment,
-          appendMode: false,
-          existingPlan: null,
-          customPrompt,
-          templateType: selectedTemplate?.template_type || 'treatment_plan',
-        }),
+      const result = await edgeFunctions.generate.treatmentPlan(supabase, {
+        inputs: clinicalInputs,
+        patientData,
+        detailLevel: detailLevel <= 25 ? 'brief' : detailLevel <= 75 ? 'standard' : 'detailed',
+        aiAdjustment,
+        appendMode: false,
+        existingPlan: null,
+        customPrompt,
+        templateType: selectedTemplate?.template_type || 'treatment_plan',
       });
-      if (!response.ok) throw new Error('Failed to regenerate document');
-      const plan = await response.json();
+      const plan = result.treatment_plan || result;
       setGeneratedPlan(plan);
       setEditableContent(planToMarkdown(plan));
       toast({ title: 'Success', description: 'Document regenerated successfully' });
@@ -636,26 +598,18 @@ export default function DoctorDashboard({ user, profile }: DoctorPageProps) {
         selectedTemplate
       );
       
-      const response = await fetch('/api/generate-treatment-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          inputs: clinicalInputs,
-          patientData,
-          detailLevel,
-          aiAdjustment,
-          appendMode,
-          existingPlan: appendMode ? generatedPlan : null,
-          customPrompt,
-          templateType: selectedTemplate?.template_type || 'treatment_plan',
-        }),
+      const result = await edgeFunctions.generate.treatmentPlan(supabase, {
+        inputs: clinicalInputs,
+        patientData,
+        detailLevel,
+        aiAdjustment,
+        appendMode,
+        existingPlan: appendMode ? generatedPlan : null,
+        customPrompt,
+        templateType: selectedTemplate?.template_type || 'treatment_plan',
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to generate document');
-      }
-
-      const plan = await response.json();
+      const plan = result.treatment_plan || result;
       
       if (appendMode && generatedPlan) {
         const merged = { ...generatedPlan, ...plan };
