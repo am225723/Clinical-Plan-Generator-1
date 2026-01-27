@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { FileText, Mic, Video, X, File, Cloud, Loader2 } from 'lucide-react';
+import { FileText, Mic, Video, X, File as FileIcon, Cloud, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -18,7 +18,7 @@ interface FileUploadProps {
 
 const FILE_TYPE_ICONS: Record<string, React.ReactNode> = {
   pdf: <FileText className="h-5 w-5 text-rose-500" />,
-  text: <File className="h-5 w-5 text-blue-500" />,
+  text: <FileIcon className="h-5 w-5 text-blue-500" />,
   audio: <Mic className="h-5 w-5 text-purple-500" />,
   video: <Video className="h-5 w-5 text-green-500" />,
 };
@@ -149,7 +149,7 @@ export function FileUpload({ files, onFilesChange }: FileUploadProps) {
 
   const uploadButtons = [
     { type: 'pdf' as const, icon: <FileText className="h-6 w-6" />, label: 'PDF' },
-    { type: 'text' as const, icon: <File className="h-6 w-6" />, label: 'Text' },
+    { type: 'text' as const, icon: <FileIcon className="h-6 w-6" />, label: 'Text' },
     { type: 'audio' as const, icon: <Mic className="h-6 w-6" />, label: 'Audio' },
     { type: 'video' as const, icon: <Video className="h-6 w-6" />, label: 'Video' },
   ];

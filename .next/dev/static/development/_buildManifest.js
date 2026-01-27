@@ -24,6 +24,7 @@ self.__BUILD_MANIFEST = {
     "/api/documents/[id]",
     "/api/generate-pdf",
     "/api/generate-treatment-plan",
+    "/api/google-drive-import",
     "/api/settings/get",
     "/api/settings/set",
     "/api/templates",
