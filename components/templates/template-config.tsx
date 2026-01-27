@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Sparkles, Shield, GripVertical, Plus, Play, Upload, ChevronLeft, Info, PenLine, FileSignature, Loader2 } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { Sparkles, Shield, GripVertical, Plus, Play, Upload, ChevronLeft, Info, PenLine, FileSignature, Loader2, AlignLeft, AlignCenter, AlignRight, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useToast } from '@/hooks/use-toast';
 
 interface TemplateSection {
@@ -28,14 +29,20 @@ interface DocumentTemplate {
   is_default: boolean;
 }
 
+interface HeaderFooterConfig {
+  text: string;
+  alignment: 'left' | 'center' | 'right';
+}
+
 interface TemplateConfigProps {
   templates: DocumentTemplate[];
   onSave: (template: DocumentTemplate) => Promise<void>;
   onBack: () => void;
   logoUrl?: string;
-  headerTitle?: string;
   onLogoUpload?: (file: File) => void;
-  onHeaderTitleChange?: (title: string) => void;
+  headerConfig?: HeaderFooterConfig;
+  footerConfig?: HeaderFooterConfig;
+  onSaveHeaderFooter?: (configs: { header: HeaderFooterConfig; footer: HeaderFooterConfig }) => Promise<void>;
 }
 
 const DEFAULT_SECTIONS: Record<string, TemplateSection[]> = {
@@ -69,6 +76,13 @@ const DEFAULT_SECTIONS: Record<string, TemplateSection[]> = {
     { id: 'assessment', name: 'Assessment', required: true, order: 2 },
     { id: 'plan', name: 'Plan', required: true, order: 3 },
   ],
+  psych_note: [
+    { id: 'chief_complaint', name: 'Chief Complaint', required: true, order: 0 },
+    { id: 'hpi', name: 'History of Present Illness', required: true, order: 1 },
+    { id: 'mse', name: 'Mental Status Exam', required: true, order: 2 },
+    { id: 'diagnosis', name: 'Diagnosis', required: true, order: 3 },
+    { id: 'assessment_plan', name: 'Assessment & Plan', required: true, order: 4 },
+  ],
   discharge_summary: [
     { id: 'admission', name: 'Admission Summary', required: true, order: 0 },
     { id: 'course', name: 'Hospital Course', required: true, order: 1 },
@@ -94,6 +108,19 @@ Structure the note with:
 - Objective: Observable findings and mental status
 - Assessment: Clinical interpretation and diagnosis
 - Plan: Treatment interventions and follow-up`,
+  progress_note: `You are a Clinical Mental Health Provider documenting a progress note.
+Summarize:
+- Subjective updates since last visit
+- Objective observations and mental status
+- Assessment of current status and diagnosis
+- Plan for next steps and follow-up`,
+  psych_note: `You are a Clinical Psychiatrist documenting a psychiatric note.
+Include:
+- Chief complaint and presenting concerns
+- History of present illness
+- Mental status examination
+- Diagnostic assessment with ICD-10 codes
+- Treatment plan and recommendations`,
   discharge_summary: `You are a Clinical Provider creating a Discharge Summary.
 Include:
 - Reason for admission and presenting problems
@@ -127,9 +154,11 @@ _____________________________
 Client Signature          Date`;
 
 const DEFAULT_TEMPLATES = [
-  { id: 'initial_eval', name: 'Initial Eval', type: 'initial_eval' },
-  { id: 'soap_note', name: 'SOAP Note', type: 'soap_note' },
-  { id: 'discharge_sum', name: 'Discharge Summary', type: 'discharge_summary' },
+  { id: 'initial_eval', name: 'Initial Evaluation', type: 'initial_eval' },
+  { id: 'progress_note', name: 'Progress Note', type: 'progress_note' },
+  { id: 'treatment_plan', name: 'Treatment Plan', type: 'treatment_plan' },
+  { id: 'psych_note', name: 'Psychiatric Note', type: 'psych_note' },
+  { id: 'discharge_summary', name: 'Discharge Summary', type: 'discharge_summary' },
 ];
 
 export function TemplateConfig({
@@ -138,6 +167,9 @@ export function TemplateConfig({
   onBack,
   logoUrl,
   onLogoUpload,
+  headerConfig,
+  footerConfig,
+  onSaveHeaderFooter,
 }: TemplateConfigProps) {
   const { toast } = useToast();
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('initial_eval');
@@ -149,28 +181,44 @@ export function TemplateConfig({
   const [providerSignature, setProviderSignature] = useState('Douglas Zelisko, M.D.\nBoard Certified Psychiatrist');
   const [includeClientSignature, setIncludeClientSignature] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingHeaderFooter, setSavingHeaderFooter] = useState(false);
   const [testing, setTesting] = useState(false);
   const [generatingSections, setGeneratingSections] = useState(false);
   const [draggedSection, setDraggedSection] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [headerText, setHeaderText] = useState('');
+  const [headerAlignment, setHeaderAlignment] = useState<HeaderFooterConfig['alignment']>('center');
+  const [footerText, setFooterText] = useState('');
+  const [footerAlignment, setFooterAlignment] = useState<HeaderFooterConfig['alignment']>('center');
 
-  const displayedTemplates: DocumentTemplate[] = templates.length > 0 ? templates : DEFAULT_TEMPLATES.map((t) => ({
-    id: t.id,
-    name: t.name,
-    template_type: t.type,
-    ai_prompt: DEFAULT_PROMPTS[t.type] || '',
-    pdf_config: { 
-      sections: DEFAULT_SECTIONS[t.type] || [],
-      headerTitle: t.name,
-      providerSignature: '',
-      includeClientSignature: true,
-      guardrails: [
-        { id: 'hipaa', name: 'Clinical Guardrails', enabled: true, description: 'HIPAA compliance' },
-        { id: 'suicide_risk', name: 'Suicide Risk Detection', enabled: true, description: 'Flag risk markers' },
-      ],
-    },
-    is_default: t.id === 'initial_eval',
-  }));
+  const displayedTemplates: DocumentTemplate[] = useMemo(() => {
+    const templateMap = new Map(templates.map((template) => [template.template_type, template]));
+    const baseTemplates = DEFAULT_TEMPLATES.map((t) => {
+      const storedTemplate = templateMap.get(t.type);
+      if (storedTemplate) return storedTemplate;
+      return {
+        id: t.id,
+        name: t.name,
+        template_type: t.type,
+        ai_prompt: DEFAULT_PROMPTS[t.type] || '',
+        pdf_config: { 
+          sections: DEFAULT_SECTIONS[t.type] || [],
+          headerTitle: t.name,
+          providerSignature: '',
+          includeClientSignature: true,
+          guardrails: [
+            { id: 'hipaa', name: 'Clinical Guardrails', enabled: true, description: 'HIPAA compliance' },
+            { id: 'suicide_risk', name: 'Suicide Risk Detection', enabled: true, description: 'Flag risk markers' },
+          ],
+        },
+        is_default: t.id === 'initial_eval',
+      } as DocumentTemplate;
+    });
+    const customTemplates = templates.filter(
+      (template) => !DEFAULT_TEMPLATES.some((defaultTemplate) => defaultTemplate.type === template.template_type),
+    );
+    return [...baseTemplates, ...customTemplates];
+  }, [templates]);
 
   useEffect(() => {
     const template = displayedTemplates.find((t) => t.id === selectedTemplateId);
@@ -186,7 +234,21 @@ export function TemplateConfig({
       setGuardrailsEnabled(hipaaGuardrail?.enabled ?? true);
       setSuicideRiskEnabled(riskGuardrail?.enabled ?? true);
     }
-  }, [selectedTemplateId, templates]);
+  }, [displayedTemplates, selectedTemplateId]);
+
+  useEffect(() => {
+    if (displayedTemplates.length === 0) return;
+    if (!displayedTemplates.some((template) => template.id === selectedTemplateId)) {
+      setSelectedTemplateId(displayedTemplates[0].id);
+    }
+  }, [displayedTemplates, selectedTemplateId]);
+
+  useEffect(() => {
+    setHeaderText(headerConfig?.text || '');
+    setHeaderAlignment(headerConfig?.alignment || 'center');
+    setFooterText(footerConfig?.text || '');
+    setFooterAlignment(footerConfig?.alignment || 'center');
+  }, [footerConfig, headerConfig]);
 
   const handleGenerateSectionsFromAI = async () => {
     setGeneratingSections(true);
@@ -302,6 +364,32 @@ export function TemplateConfig({
   const handleTestLogic = () => {
     setTesting(true);
     setTimeout(() => setTesting(false), 1500);
+  };
+
+  const handleSaveHeaderFooter = async () => {
+    if (!onSaveHeaderFooter) return;
+    setSavingHeaderFooter(true);
+    try {
+      await onSaveHeaderFooter({
+        header: { text: headerText, alignment: headerAlignment },
+        footer: { text: footerText, alignment: footerAlignment },
+      });
+      toast({ title: 'Saved', description: 'Header and footer saved' });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to save header and footer', variant: 'destructive' });
+    }
+    setSavingHeaderFooter(false);
+  };
+
+  const alignmentClass = (alignment: HeaderFooterConfig['alignment']) => {
+    switch (alignment) {
+      case 'left':
+        return 'text-left';
+      case 'right':
+        return 'text-right';
+      default:
+        return 'text-center';
+    }
   };
 
   const selectedTemplate = displayedTemplates.find((t) => t.id === selectedTemplateId);
@@ -483,6 +571,92 @@ export function TemplateConfig({
             </div>
             <div className="bg-card/50 dark:bg-card/30 rounded-xl p-4 text-xs font-mono leading-relaxed whitespace-pre-wrap text-muted-foreground max-h-[200px] overflow-y-auto">
               {SAMPLE_OUTPUT}
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Type className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-semibold">Document Header & Footer</h2>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveHeaderFooter}
+              disabled={savingHeaderFooter || !onSaveHeaderFooter}
+              className="gap-1.5 rounded-xl border-primary/50 text-primary hover:bg-primary/10"
+            >
+              {savingHeaderFooter ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+              Save Layout
+            </Button>
+          </div>
+
+          <div className="glass-panel rounded-2xl p-4 space-y-4">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Header Text</p>
+                <Textarea
+                  value={headerText}
+                  onChange={(e) => setHeaderText(e.target.value)}
+                  placeholder="Add practice name, address, or credentials"
+                  className="min-h-[70px] bg-card/50 dark:bg-card/30 border-border rounded-xl text-sm resize-none"
+                />
+                <ToggleGroup
+                  type="single"
+                  value={headerAlignment}
+                  onValueChange={(value) => value && setHeaderAlignment(value as HeaderFooterConfig['alignment'])}
+                  className="justify-start"
+                >
+                  <ToggleGroupItem value="left" aria-label="Align left">
+                    <AlignLeft className="h-4 w-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="center" aria-label="Align center">
+                    <AlignCenter className="h-4 w-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="right" aria-label="Align right">
+                    <AlignRight className="h-4 w-4" />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Footer Text</p>
+                <Textarea
+                  value={footerText}
+                  onChange={(e) => setFooterText(e.target.value)}
+                  placeholder="Add disclaimers, contact info, or page footer text"
+                  className="min-h-[70px] bg-card/50 dark:bg-card/30 border-border rounded-xl text-sm resize-none"
+                />
+                <ToggleGroup
+                  type="single"
+                  value={footerAlignment}
+                  onValueChange={(value) => value && setFooterAlignment(value as HeaderFooterConfig['alignment'])}
+                  className="justify-start"
+                >
+                  <ToggleGroupItem value="left" aria-label="Align left">
+                    <AlignLeft className="h-4 w-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="center" aria-label="Align center">
+                    <AlignCenter className="h-4 w-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="right" aria-label="Align right">
+                    <AlignRight className="h-4 w-4" />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-dashed border-border bg-card/40 dark:bg-card/20 p-4 text-xs text-muted-foreground space-y-4">
+              <div className={`font-semibold text-foreground ${alignmentClass(headerAlignment)}`}>
+                {headerText || 'Header preview text'}
+              </div>
+              <div className="border-t border-border/70 pt-4">
+                <div className={`text-muted-foreground ${alignmentClass(footerAlignment)}`}>
+                  {footerText || 'Footer preview text'}
+                </div>
+              </div>
             </div>
           </div>
         </section>
