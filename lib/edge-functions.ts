@@ -49,6 +49,24 @@ export async function callEdgeFunction<T = any>(
   return data;
 }
 
+export async function callEdgeFunctionSafe<T = any>(
+  supabase: SupabaseClient,
+  functionName: string,
+  defaultValue: T,
+  options: {
+    method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    body?: any;
+    params?: Record<string, string>;
+  } = {}
+): Promise<T> {
+  try {
+    return await callEdgeFunction<T>(supabase, functionName, options);
+  } catch (error) {
+    console.warn(`Edge function ${functionName} unavailable:`, error);
+    return defaultValue;
+  }
+}
+
 export const edgeFunctions = {
   admin: {
     createUser: (supabase: SupabaseClient, data: { email: string; password?: string; full_name: string }) =>
@@ -57,12 +75,12 @@ export const edgeFunctions = {
       callEdgeFunction(supabase, 'admin-update-user', { method: 'POST', body: data }),
   },
   settings: {
-    get: (supabase: SupabaseClient) => callEdgeFunction(supabase, 'settings-get'),
+    get: (supabase: SupabaseClient) => callEdgeFunctionSafe(supabase, 'settings-get', { treatment_plan_prompt: '' }),
     set: (supabase: SupabaseClient, data: { treatment_plan_prompt: string }) =>
       callEdgeFunction(supabase, 'settings-set', { method: 'POST', body: data }),
   },
   templates: {
-    list: (supabase: SupabaseClient) => callEdgeFunction(supabase, 'templates'),
+    list: (supabase: SupabaseClient) => callEdgeFunctionSafe(supabase, 'templates', []),
     get: (supabase: SupabaseClient, id: string) =>
       callEdgeFunction(supabase, 'templates', { params: { id } }),
     create: (supabase: SupabaseClient, data: any) =>
@@ -74,7 +92,7 @@ export const edgeFunctions = {
   },
   documents: {
     list: (supabase: SupabaseClient, params?: { search?: string; limit?: number; offset?: number }) =>
-      callEdgeFunction(supabase, 'documents', { params: params as any }),
+      callEdgeFunctionSafe(supabase, 'documents', [], { params: params as any }),
     get: (supabase: SupabaseClient, id: string) =>
       callEdgeFunction(supabase, 'documents', { params: { id } }),
     create: (supabase: SupabaseClient, data: any) =>
@@ -85,10 +103,15 @@ export const edgeFunctions = {
       callEdgeFunction(supabase, 'documents', { method: 'DELETE', params: { id } }),
   },
   dashboard: {
-    summary: (supabase: SupabaseClient) => callEdgeFunction(supabase, 'dashboard-summary'),
+    summary: (supabase: SupabaseClient) => callEdgeFunctionSafe(supabase, 'dashboard-summary', {
+      total_documents: 0,
+      time_saved_hours: 0,
+      compliance_rate: 0,
+      risk_flagged: 0,
+    }),
     appointments: (supabase: SupabaseClient, date?: string) =>
-      callEdgeFunction(supabase, 'dashboard-appointments', { params: date ? { date } : undefined }),
-    calendarImports: (supabase: SupabaseClient) => callEdgeFunction(supabase, 'dashboard-calendar-imports'),
+      callEdgeFunctionSafe(supabase, 'dashboard-appointments', [], { params: date ? { date } : undefined }),
+    calendarImports: (supabase: SupabaseClient) => callEdgeFunctionSafe(supabase, 'dashboard-calendar-imports', []),
     importCalendar: (supabase: SupabaseClient, events: any[]) =>
       callEdgeFunction(supabase, 'dashboard-calendar-imports', { method: 'POST', body: events }),
   },
