@@ -6,8 +6,8 @@
   "rootMainFiles": [],
   "pages": {
     "/doctor": [
-      "static/chunks/node_modules_pdfjs-dist_legacy_build_pdf_mjs_1488dd74._.js",
-      "static/chunks/[root-of-the-server]__3d2652b6._.js",
+      "static/chunks/node_modules_pdfjs-dist_legacy_build_pdf_mjs_4e7af1ae._.js",
+      "static/chunks/[root-of-the-server]__21453d11._.js",
       "static/chunks/node_modules_next_dist_compiled_caaa605a._.js",
       "static/chunks/node_modules_next_dist_shared_lib_9a2a7093._.js",
       "static/chunks/node_modules_next_dist_client_5a8a528e._.js",
@@ -19,10 +19,10 @@
       "static/chunks/node_modules_@supabase_a6eeab80._.js",
       "static/chunks/node_modules_@radix-ui_653e0d27._.js",
       "static/chunks/node_modules_@floating-ui_ababeaec._.js",
-      "static/chunks/node_modules_c601d09a._.js",
+      "static/chunks/node_modules_ed205be9._.js",
       "static/chunks/styles_globals_dc36e6c9.css",
       "static/chunks/pages_doctor_index_tsx_2da965e7._.js",
-      "static/chunks/turbopack-pages_doctor_index_tsx_b3a32913._.js"
+      "static/chunks/turbopack-pages_doctor_index_tsx_5745cd0f._.js"
     ]
   },
   "ampFirstPages": []
