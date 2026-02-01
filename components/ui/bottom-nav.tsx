@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { Home, FileText, History, Settings, Sparkles, Users } from 'lucide-react';
+import { Home, FileText, History, Settings, Sparkles, Users, ClipboardList } from 'lucide-react';
 
 interface NavItem {
   icon: React.ReactNode;
@@ -17,7 +17,7 @@ export function BottomNav({ onGenerateClick }: BottomNavProps) {
   
   const leftNavItems: NavItem[] = [
     { icon: <Home className="h-6 w-6" />, label: 'Home', href: '/doctor', tab: 'dashboard' },
-    { icon: <FileText className="h-6 w-6" />, label: 'Templates', href: '/settings' },
+    { icon: <ClipboardList className="h-6 w-6" />, label: 'Report', href: '/clinical-report' },
   ];
 
   const rightNavItems: NavItem[] = [

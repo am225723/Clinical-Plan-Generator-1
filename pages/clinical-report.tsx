@@ -56,40 +56,40 @@ export default function ClinicalReportPage({ user, profile }: ClinicalReportPage
 
     setIsGenerating(true);
     try {
-      const result = await edgeFunctions.generate.treatmentPlan(supabase, {
-        inputs: {
-          intake_form_data: intakeText,
-        },
-        patientData: {},
-        detailLevel: 'detailed',
-        customPrompt: `You are an expert Clinical Documentation AI. Process the patient intake text and generate a comprehensive clinical report.
+      const result = await edgeFunctions.generate.clinicalReport(supabase, intakeText);
 
-Generate a JSON response with the following structure:
-{
-  "clinical_summary": "A concise, professional summary of the patient's current status, presenting problems, and relevant history. Single coherent paragraph.",
-  "follow_up_questions": ["Array of targeted follow-up questions to gather missing information for a formal Treatment Plan. Questions should cover: Client Demographics, Therapy Modality, Presenting Problem, Reason for Treatment, Diagnosis info, Symptoms, Goals, Actionable Steps, Timeline, and Interventions."],
-  "extended_report": {
-    "patient_summary": "Expanded version of the clinical summary suitable for medical records.",
-    "history_of_presenting_illness": "Detailed narrative of the chief complaint and its development.",
-    "symptom_categorization": {
-      "physical": ["Array of physical symptoms"],
-      "emotional": ["Array of emotional symptoms"],
-      "cognitive": ["Array of cognitive symptoms"]
-    },
-    "recommended_clinical_follow_up": ["Array of suggested next steps for clinical care"]
-  }
-}
-
-Patient Intake Text:
-${intakeText}`,
-      });
-
-      if (result) {
-        setReport(result as ClinicalReport);
+      if (result && !result.error) {
+        const reportData: ClinicalReport = {
+          clinical_summary: result.clinical_summary || '',
+          follow_up_questions: Array.isArray(result.follow_up_questions) ? result.follow_up_questions : [],
+          extended_report: {
+            patient_summary: result.extended_report?.patient_summary || '',
+            history_of_presenting_illness: result.extended_report?.history_of_presenting_illness || '',
+            symptom_categorization: {
+              physical: result.extended_report?.symptom_categorization?.physical || [],
+              emotional: result.extended_report?.symptom_categorization?.emotional || [],
+              cognitive: result.extended_report?.symptom_categorization?.cognitive || [],
+            },
+            recommended_clinical_follow_up: result.extended_report?.recommended_clinical_follow_up || [],
+          },
+        };
+        setReport(reportData);
         setCurrentStep('report');
         toast({
           title: 'Report Generated',
           description: 'Clinical report has been generated successfully.',
+        });
+      } else if (result?.error) {
+        toast({
+          title: 'Generation Failed',
+          description: result.error,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Generation Failed',
+          description: 'Unable to generate report. Please try again.',
+          variant: 'destructive',
         });
       }
     } catch (error) {
