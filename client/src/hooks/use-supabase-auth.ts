@@ -72,6 +72,10 @@ export function useSupabaseAuth() {
           error: null
         }));
       } catch (err: any) {
+        if (import.meta.env.DEV) {
+          console.warn('Auth/profile connection check failed', { message: err?.message || 'Unknown auth error' });
+        }
+
         setAuthState(prev => ({ 
           ...prev, 
           loading: false, 

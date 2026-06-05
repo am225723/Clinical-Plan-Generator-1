@@ -1,7 +1,11 @@
 import { createServerClient, getUserProfile } from '@/lib/supabase';
 
 export default function Home() {
-  return null;
+  return (
+    <main className="min-h-screen bg-slate-50 px-6 py-12 text-slate-700">
+      Loading your IFS path…
+    </main>
+  );
 }
 
 export const getServerSideProps = async (ctx: any) => {
