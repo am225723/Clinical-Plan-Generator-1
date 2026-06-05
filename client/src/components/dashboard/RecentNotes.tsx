@@ -1,13 +1,16 @@
 import React from 'react';
+import { useLocation } from 'wouter';
 
 export const RecentNotes: React.FC = () => {
+    const [, setLocation] = useLocation();
+
     return (
         <>
             <section className="flex flex-col px-6 pb-2 pt-6">
                 <h3 className="text-slate-900 dark:text-white text-lg font-bold tracking-tight">Recent Notes</h3>
             </section>
             <section className="flex flex-col gap-3 px-6 pb-8">
-                 <div className="group flex items-center justify-between p-4 rounded-2xl bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition-colors cursor-pointer border border-transparent hover:border-white/60 dark:hover:border-white/10">
+                 <button type="button" onClick={() => setLocation("/generator")} className="group flex w-full items-center justify-between p-4 rounded-2xl bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition-colors cursor-pointer border border-transparent hover:border-white/60 dark:hover:border-white/10 text-left">
                     <div className="flex items-center gap-4">
                         <div className="relative flex items-center justify-center size-12 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
                             <span className="material-symbols-outlined">description</span>
@@ -28,9 +31,9 @@ export const RecentNotes: React.FC = () => {
                         <span className="hidden sm:block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border border-green-100 dark:border-transparent">Finalized</span>
                         <span className="material-symbols-outlined text-slate-300 dark:text-white/30 group-hover:text-slate-400">chevron_right</span>
                     </div>
-                </div>
+                </button>
 
-                <div className="group flex items-center justify-between p-4 rounded-2xl bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition-colors cursor-pointer border border-transparent hover:border-white/60 dark:hover:border-white/10">
+                <button type="button" onClick={() => setLocation("/patients")} className="group flex w-full items-center justify-between p-4 rounded-2xl bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition-colors cursor-pointer border border-transparent hover:border-white/60 dark:hover:border-white/10 text-left">
                     <div className="flex items-center gap-4">
                         <div className="relative flex items-center justify-center size-12 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400">
                             <span className="material-symbols-outlined">psychology</span>
@@ -51,9 +54,9 @@ export const RecentNotes: React.FC = () => {
                         </div>
                         <span className="material-symbols-outlined text-slate-300 dark:text-white/30 group-hover:text-slate-400">chevron_right</span>
                     </div>
-                </div>
+                </button>
 
-                <div className="group flex items-center justify-between p-4 rounded-2xl bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition-colors cursor-pointer border border-transparent hover:border-white/60 dark:hover:border-white/10">
+                <button type="button" onClick={() => setLocation("/medication")} className="group flex w-full items-center justify-between p-4 rounded-2xl bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition-colors cursor-pointer border border-transparent hover:border-white/60 dark:hover:border-white/10 text-left">
                     <div className="flex items-center gap-4">
                         <div className="relative flex items-center justify-center size-12 rounded-full bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400">
                             <span className="material-symbols-outlined">medication</span>
@@ -71,7 +74,7 @@ export const RecentNotes: React.FC = () => {
                         <span className="hidden sm:block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/40 border border-slate-200 dark:border-transparent">Draft</span>
                         <span className="material-symbols-outlined text-slate-300 dark:text-white/30 group-hover:text-slate-400">chevron_right</span>
                     </div>
-                </div>
+                </button>
             </section>
         </>
     );

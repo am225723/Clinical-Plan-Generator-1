@@ -1,7 +1,8 @@
-import React from "react";
-import { useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface RouteErrorBoundaryProps {
   children: React.ReactNode;
@@ -12,30 +13,29 @@ interface RouteErrorBoundaryState {
   error?: Error;
 }
 
-const isDev = import.meta.env.DEV;
-
 function RouteErrorFallback({ error }: { error?: Error }) {
-  const [, setLocation] = useLocation();
+  const router = useRouter();
+  const isDev = process.env.NODE_ENV !== 'production';
 
   const goBack = () => {
-    if (window.history.length > 1) {
-      window.history.back();
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
       return;
     }
 
-    setLocation("/my-ifs", { replace: true });
+    router.replace('/');
   };
 
   return (
-    <main className="min-h-screen w-full bg-gray-50 px-4 py-10 dark:bg-background">
+    <main className="min-h-screen w-full bg-slate-50 px-4 py-10">
       <Card className="mx-auto max-w-xl">
         <CardHeader>
-          <CardTitle className="text-2xl text-slate-900 dark:text-white">
+          <CardTitle className="text-2xl text-slate-900">
             Something on this page did not load correctly.
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
-          <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
+          <p className="text-sm leading-6 text-slate-600">
             You can refresh or return to your IFS path.
           </p>
           {isDev && error ? (
@@ -45,14 +45,14 @@ function RouteErrorFallback({ error }: { error?: Error }) {
           ) : null}
           <div className="grid gap-3 sm:grid-cols-2">
             <Button onClick={() => window.location.reload()}>Refresh</Button>
-            <Button variant="outline" onClick={() => setLocation("/my-ifs", { replace: true })}>
-              Go to My IFS Work
+            <Button asChild variant="outline">
+              <Link href="/doctor">Go to My IFS Work</Link>
             </Button>
-            <Button variant="outline" onClick={() => setLocation("/", { replace: true })}>
-              Go to Home
+            <Button asChild variant="outline">
+              <Link href="/">Go to Home</Link>
             </Button>
-            <Button variant="outline" onClick={() => setLocation("/templates", { replace: true })}>
-              Open Tools
+            <Button asChild variant="outline">
+              <Link href="/settings">Open Tools</Link>
             </Button>
             <Button variant="outline" onClick={goBack} className="sm:col-span-2">
               Go Back
@@ -75,8 +75,8 @@ export class RouteErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    if (isDev) {
-      console.error("Route render error", {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Route render error', {
         message: error.message,
         componentStack: errorInfo.componentStack,
       });

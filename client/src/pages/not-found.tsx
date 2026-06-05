@@ -20,9 +20,9 @@ export default function NotFound() {
             We could not find that page. You can return to your IFS path or open the Tools Directory.
           </p>
           <div className="grid gap-3 sm:grid-cols-3">
-            <Button onClick={() => setLocation("/")}>Go Home</Button>
-            <Button variant="outline" onClick={() => setLocation("/my-ifs")}>My IFS Work</Button>
-            <Button variant="outline" onClick={() => setLocation("/templates")}>Tools</Button>
+            <Button onClick={() => setLocation("/my-ifs", { replace: true })}>My IFS Work</Button>
+            <Button variant="outline" onClick={() => setLocation("/", { replace: true })}>Home</Button>
+            <Button variant="outline" onClick={() => setLocation("/templates", { replace: true })}>Tools</Button>
           </div>
         </CardContent>
       </Card>
